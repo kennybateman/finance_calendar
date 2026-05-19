@@ -1,0 +1,15 @@
+# Ignore everything
+*
+
+# Allow just the directories with work, ignore generated stuff
+!graphics/
+!lib/
+!test/
+
+# Allow specific root files
+!README.md
+!.gitignore
+!package.json
+!pubspec.yaml
+!analysis_options.yaml
+!finance_calendar.iml

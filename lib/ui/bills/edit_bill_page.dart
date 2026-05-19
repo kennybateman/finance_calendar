@@ -154,9 +154,14 @@ class EditBillPageState extends State<EditBillPage> {
   }
 
   void remove() async {
-    await widget.deleteItem(widget.bill);
-    if (!mounted) return;
-    Navigator.pop(context);
+    try {
+      await widget.deleteItem(widget.bill);
+      if (!mounted) return;
+      Navigator.pop(context);
+    } 
+    finally{
+
+    }
   }
 
   void create() async {

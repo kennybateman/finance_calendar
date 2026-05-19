@@ -150,9 +150,14 @@ class EditIncomePageState extends State<EditIncomePage> {
   }
 
   void remove() async {
-    await widget.deleteItem(widget.income);
-    if (!mounted) return;
-    Navigator.pop(context);
+    try {
+      await widget.deleteItem(widget.income);
+      if (!mounted) return;
+      Navigator.pop(context);
+    } 
+    finally{
+
+    }
   }
 
   void create() async {

@@ -183,10 +183,14 @@ class GenerateProjectionsUseCase {
     allIncome = await incomeRepo.getAll();
   }
 
-  Future<void> generateProjections() async {
-    developer.log("wooooooh!");
+  Future<void> loadAndValidateAllRecords() async {
     await loadAllItems();
     validateRecords();
+  }
+
+  Future<void> generateProjections() async {
+    developer.log("wooooooh!");
+    await loadAndValidateAllRecords();
     joinRecords();
     await catchUpDueDates();
 

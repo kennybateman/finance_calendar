@@ -1,9 +1,14 @@
-/* Finance Calendar by Kenny Upton 2026
-  This is a front end for a general program that simply projects your finances out into the future.
-  FinanceCalendar is a stateful widget. Aside from the calendar page, most pages are generic CRUD pages
-  allowing the user to create, update, and delete: bills, income, or accounts. This is something that I've
-  personally had to do in spread sheets so many times, it seems really useful to just streamline with code.
-*/
+# Finance Calendar by Kenny Upton 2026
 
-TODO NEXT...
-Work on the CRUD pages, improve them get them into regs.
+This is meant to be a very minimalistic application for projectings basic finances over time.
+
+Create accounts to represent how much money you have.
+Create income to represent how much money you expect to make and how frequently.
+Create bills in the same way.
+Then see this projected out over time.
+
+There is no immediate desire to use APIs to try and directly link to your account.
+This app is not meant to be that potentially invasive.
+
+You can choose for an account to be a 'credit' account, which will calculate interest payments over time,
+and the balance will work in the opposite direction, ex: bills increase balance instead of decrease.

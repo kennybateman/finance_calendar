@@ -167,9 +167,14 @@ class EditAccountPageState extends State<EditAccountPage> {
   }
 
   void remove() async {
-    await widget.deleteItem(widget.account);
-    if (!mounted) return;
-    Navigator.pop(context);
+    try {
+      await widget.deleteItem(widget.account);
+      if (!mounted) return;
+      Navigator.pop(context);
+    } 
+    finally{
+
+    }
   }
 
   void create() async {

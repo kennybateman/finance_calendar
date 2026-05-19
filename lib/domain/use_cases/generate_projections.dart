@@ -183,10 +183,14 @@ class GenerateProjectionsUseCase {
     allIncome = await incomeRepo.getAll();
   }
 
-  Future<void> generateProjections() async {
-    developer.log("wooooooh!");
+  Future<void> loadAndValidateAllRecords() async {
     await loadAllItems();
     validateRecords();
+  }
+
+  Future<void> generateProjections() async {
+    developer.log("wooooooh!");
+    await loadAndValidateAllRecords();
     joinRecords();
     await catchUpDueDates();
 
@@ -208,21 +212,27 @@ class GenerateProjectionsUseCase {
     DateTime projectionDate = start;
     Projection? previousDaysProjection;
     while (projectionDate.isBefore(end)) { 
-      developer.log(projectionDate.toString());
       var projectionForDay = Projection(date: projectionDate);
 
       for(Account account in allAccounts){
         /* initialize or carry over balance from previous day */
-        var previousBalance = previousDaysProjection != null ? previousDaysProjection.accountProjectionsByAccountPk![account.pk]!.projectedBalance : account.balance;
+        final previousBalance = previousDaysProjection != null ? previousDaysProjection.accountProjectionsByAccountPk![account.pk]!.projectedBalance : account.balance;
 
+        final isCreditAccount = account.accountType == 'credit';
         var newBalance = previousBalance;
+        
 
         /* Make Bill Projections for interest payments */
         for(var i=0; i < allAccounts.length; i++){
           var creditAccount = allAccounts[i];
           if (creditAccount.accountType == 'credit' && creditAccount.dueDate == projectionDate && creditAccount.payFromAccountPk == account.pk){
             var billAmount = calculateCompoundInterest(previousBalance, projectionDate);
-            newBalance -= billAmount;
+            if (isCreditAccount) {
+              newBalance += billAmount;
+            }
+            else {
+              newBalance -= billAmount;
+            }
 
             allAccounts[i] = creditAccount.updateValue(dueDate: findNextDueDate(creditAccount.dueDate!, creditAccount.dueFrequency));
 
@@ -234,7 +244,12 @@ class GenerateProjectionsUseCase {
         for(var i = 0; i < allBills.length; i++){
           Bill bill = allBills[i];
           if (bill.dueDate == projectionDate && bill.payFromAccountPk == account.pk){
-            newBalance -= bill.amount;
+            if (isCreditAccount) {
+              newBalance += bill.amount;
+            }
+            else {
+              newBalance -= bill.amount;
+            }
 
             allBills[i] = bill.updateValue(dueDate: findNextDueDate(bill.dueDate!, bill.dueFrequency));
 
@@ -246,7 +261,12 @@ class GenerateProjectionsUseCase {
         for(var i = 0; i < allIncome.length; i++){
           Income income = allIncome[i];
           if (income.dueDate == projectionDate && income.payToAccountPk == account.pk){
-            newBalance += income.amount;
+            if (isCreditAccount){
+              newBalance -= income.amount;
+            }
+            else{
+              newBalance += income.amount;
+            }
 
             allIncome[i] = income.updateValue(dueDate: findNextDueDate(income.dueDate!, income.dueFrequency));
 

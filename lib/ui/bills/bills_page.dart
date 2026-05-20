@@ -25,11 +25,14 @@ class BillsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
-    Widget toString(Bill bill){
+    Widget toString(Bill bill, double scale){
       var amountString = "\$${currencyCentsToDollarsString(bill.amount)}";
       var payFromString = bill.payFromAccount != null ? "pay from: ${bill.payFromAccount!.name}" : "(missing pay from account)";
       var dueString = bill.dueDate != null ? "next due ${dateToStringForDisplay(bill.dueDate)}" : "(missing due date)";
-      return Text("${bill.name}: $amountString ${bill.dueFrequency} - $dueString - $payFromString");
+      return Text(
+        "${bill.name}: $amountString ${bill.dueFrequency} - $dueString - $payFromString",
+        style: TextStyle(fontSize: 16 * scale)
+      );
     }
 
     Future<List<Bill>> joinExtraModels(List<Bill> unjoinedBills) async {
@@ -54,7 +57,8 @@ class BillsPage extends StatelessWidget {
         createNew: repo.createNew,
         updateItem: repo.saveChanges,
         deleteItem: repo.delete,
-      )
+      ),
+      useAddButton: true,
     );
   }
 }

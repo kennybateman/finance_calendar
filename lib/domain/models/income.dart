@@ -1,7 +1,7 @@
 import 'abstract_domain_model.dart';
 import 'account.dart';
 
-class Income implements DomainModel {
+class Income extends DomainModel<Income> {
   @override
   final int? pk;
   final String name;
@@ -17,8 +17,10 @@ class Income implements DomainModel {
     required this.dueDate, 
     required this.dueFrequency, 
     required this.payToAccountPk,
-    this.payToAccount});
+    this.payToAccount
+  });
 
+  @override
   bool keyFieldsChanged(Income other){
     return amount != other.amount ||
     dueDate != other.dueDate ||

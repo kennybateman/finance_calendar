@@ -6,7 +6,7 @@ import 'package:finance_calendar/domain/models/abstract_domain_model.dart';
 // import 'package:finance_calendar/data/services/database_wrapper.dart';
 // import 'package:finance_calendar/domain/models/projection.dart';
 
-class TestRepository<T extends DomainModel> implements Repository<T> {
+class TestRepository<T extends DomainModel<T>> implements Repository<T> {
   final List<T> models;
 
   TestRepository([List<T>? initial]) : models = initial ?? [];

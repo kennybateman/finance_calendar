@@ -7,7 +7,7 @@ import '../../data/repositories/projections_repository.dart';
 import 'package:finance_calendar/domain/models/projection_read_only.dart';
 import 'package:finance_calendar/domain/use_cases/generate_projections.dart';
 // UI
-import '../shared/read_list_page.dart';
+import '../shared/crud_list_page.dart';
 import 'projection_details_page.dart';
 
 class ProjectionsPage extends StatelessWidget {
@@ -33,11 +33,14 @@ class ProjectionsPage extends StatelessWidget {
       }
     }
 
-    Widget toTileWidget(ProjectionReadModel projection){
-      return Text(projection.toString());
+    Widget toTileWidget(ProjectionReadModel projection, double scale){
+      return Text(
+        projection.toString(), 
+        style: TextStyle(fontSize: 16 * scale)
+      );
     }
 
-    return ReadListPage<ProjectionReadModel>(
+    return CrudListPage<ProjectionReadModel>(
       getAll: tryGetAllReadModels,
       buildTileWidget: toTileWidget,
       preloadHook: generateProjections.generateProjections,

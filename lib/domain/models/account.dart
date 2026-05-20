@@ -1,6 +1,6 @@
 import 'abstract_domain_model.dart';
 
-class Account implements DomainModel {
+class Account extends DomainModel<Account> {
   @override
   final int? pk;
   final String name;
@@ -102,6 +102,7 @@ class Account implements DomainModel {
     );  
   }
 
+  @override
   bool keyFieldsChanged(Account other){
     return balance != other.balance ||
     balanceDate != other.balanceDate ||

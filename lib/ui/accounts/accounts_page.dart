@@ -22,10 +22,11 @@ class AccountsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
-    Widget toString(Account account){ 
+    Widget toString(Account account, double scale){ 
       /* Common fields */
       String balanceString = "\$${currencyCentsToDollarsString(account.balance)}";
       String lastReportedString = account.balanceDate != null ? "last reported ${dateToStringForDisplay(account.balanceDate!)!}" : "(no date set)";
+      String content;
       /* Credit only fields */
       if(account.accountType == "credit"){
         // General credit account into
@@ -39,9 +40,15 @@ class AccountsPage extends StatelessWidget {
         var accountInfoString = "$creditLimitString $creditInterestString";
         var nextInterestPaymentString = "$amountString $dueDateString - $payFromString";
 
-        return Text("${account.name}: $balanceString $lastReportedString $accountInfoString - $nextInterestPaymentString");
+        content = "${account.name}: $balanceString $lastReportedString $accountInfoString - $nextInterestPaymentString";
       }
-      return Text("${account.name}: $balanceString $lastReportedString");
+      else {
+       content = "${account.name}: $balanceString $lastReportedString";
+      }
+      return Text(
+        content, 
+        style: TextStyle(fontSize: 16 * scale)
+      );
     }
 
     Future<List<Account>> joinExtraModels(List<Account> unjoinedAccounts) async {
@@ -65,7 +72,8 @@ class AccountsPage extends StatelessWidget {
         createNew: repo.createNew,
         updateItem: repo.saveChanges,
         deleteItem: repo.delete,
-      )
+      ),
+      useAddButton: true,
     );
   }
 }

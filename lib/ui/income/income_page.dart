@@ -25,11 +25,14 @@ class IncomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
-    Widget toString(Income income){
+    Widget toString(Income income, double scale){
       var amountString = "\$${currencyCentsToDollarsString(income.amount)}";
       var payToString = income.payToAccount != null ? "pay to: ${income.payToAccount!.name}" : "(missing pay to account)";
       var dueString = income.dueDate != null ? "next due ${dateToStringForDisplay(income.dueDate)}" : "(missing due date)";
-      return Text("${income.name}: $amountString ${income.dueFrequency} - $dueString - $payToString");
+      return Text(
+        "${income.name}: $amountString ${income.dueFrequency} - $dueString - $payToString",
+        style: TextStyle(fontSize: 16 * scale)
+      );
     }
 
     Future<List<Income>> joinExtraModels(List<Income> unjoinedIncome) async {
@@ -54,7 +57,8 @@ class IncomePage extends StatelessWidget {
         createNew: repo.createNew,
         updateItem: repo.saveChanges,
         deleteItem: repo.delete,
-      )
+      ),
+      useAddButton: true,
     );
   }
 }

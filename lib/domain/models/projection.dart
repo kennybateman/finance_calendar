@@ -3,7 +3,7 @@ import 'account.dart';
 import 'bill.dart';
 import 'income.dart';
 
-class Projection implements DomainModel {
+class Projection extends DomainModel<Projection> {
   @override 
   final int? pk;
   final DateTime date;
@@ -49,12 +49,17 @@ class Projection implements DomainModel {
     date,
   ]);
 
+  @override
+  bool keyFieldsChanged(Projection other){
+    throw Exception("not implemented");  
+  }
+
   static Projection createNewTemp(DateTime date){
     return Projection(date: date);
   }
 }
 
-class AccountProjection implements DomainModel{
+class AccountProjection extends DomainModel<AccountProjection>{
   @override
   final int? pk;
   final int accountPk;
@@ -93,6 +98,11 @@ class AccountProjection implements DomainModel{
     projectedBalance,
   ]);
 
+  @override
+  bool keyFieldsChanged(AccountProjection other){
+    throw Exception("not implemented");  
+  }
+
   AccountProjection updateValues({
     int? pk,
     int? projectedBalance,
@@ -114,7 +124,7 @@ Map<int?, AccountProjection?> mapAccountProjectionsByAccountPk(List<AccountProje
   return map;
 }
 
-class BillProjection implements DomainModel{
+class BillProjection extends DomainModel<BillProjection> {
   @override
   final int? pk;
   final int? billPk;
@@ -159,6 +169,11 @@ class BillProjection implements DomainModel{
     projectedAmount,
   ]);
 
+  @override
+  bool keyFieldsChanged(BillProjection other){
+    throw Exception("not implemented");  
+  }
+
   BillProjection updateValues({
     int? pk,
     int? projectedAmount,
@@ -174,7 +189,7 @@ class BillProjection implements DomainModel{
   }
 }
 
-class IncomeProjection implements DomainModel{
+class IncomeProjection extends DomainModel<IncomeProjection>{
   @override
   final int? pk;
   final int incomePk;
@@ -212,6 +227,11 @@ class IncomeProjection implements DomainModel{
     projectionPk,
     projectedAmount,
   ]);
+
+  @override
+  bool keyFieldsChanged(IncomeProjection other){
+    throw Exception("not implemented");  
+  }
 
   IncomeProjection updateValues({
     int? pk,

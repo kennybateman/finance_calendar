@@ -9,7 +9,7 @@ import 'abstract_domain_model.dart';
   anyway, none of this will be saved back to the DB ever.
   When saving data 
 */
-class ProjectionReadModel implements DomainModel{
+class ProjectionReadModel extends DomainModel<ProjectionReadModel>{
   @override 
   final int pk;
   final DateTime date;
@@ -40,6 +40,11 @@ class ProjectionReadModel implements DomainModel{
 
   bool anyTransactions(){ 
     return transactionProjectionStrings.isNotEmpty;
+  }
+
+  @override
+  bool keyFieldsChanged(ProjectionReadModel other){
+    throw Exception("not implemented");  
   }
 }
 

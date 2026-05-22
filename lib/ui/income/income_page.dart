@@ -7,7 +7,6 @@ import '../../data/repositories/accounts_repository.dart';
 import 'package:finance_calendar/domain/use_cases/helpers.dart';
 import 'package:finance_calendar/domain/use_cases/generate_projections.dart';
 import '../../domain/models/income.dart';
-import '../../domain/models/abstract_domain_model.dart';
 // UI
 import '../shared/crud_list_page.dart';
 import 'edit_income_page.dart';
@@ -25,7 +24,7 @@ class IncomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
-    Widget toString(Income income, double scale){
+    Widget buildTileWidget(Income income, double scale){
       var amountString = "\$${currencyCentsToDollarsString(income.amount)}";
       var payToString = income.payToAccount != null ? "pay to: ${income.payToAccount!.name}" : "(missing pay to account)";
       var dueString = income.dueDate != null ? "next due ${dateToStringForDisplay(income.dueDate)}" : "(missing due date)";
@@ -35,21 +34,20 @@ class IncomePage extends StatelessWidget {
       );
     }
 
-    Future<List<Income>> joinExtraModels(List<Income> unjoinedIncome) async {
-      var allAccounts = await accountsRepo.getAll();
-      var accountsbyPk = mapByPk(allAccounts);
-      return unjoinedIncome.map((i) => i.joinPayToAccount(accountsbyPk[i.payToAccountPk])).toList();
+    Income createNewTemp(){
+      return Income(
+        name: "income", 
+        amount: 0, 
+        dueDate: null, 
+        dueFrequency: 'biweekly', 
+        payToAccountPk: null);
     }
 
     return CrudListPage<Income>(
-      buildTileWidget: toString,
       getAll: repo.getAll,
-      createNew: repo.createNew,
-      updateItem: repo.saveChanges,
-      deleteItem: repo.delete,
-      joinExtraModels: joinExtraModels,
-
-      createEmpty: () => Income.createNewTemp(),
+      buildTileWidget: buildTileWidget,
+      useAddButton: true,
+      createNewTemp: createNewTemp,
       editPage: (Income i) => EditIncomePage(income: i, 
         generateProjections: generateProjections,
         getAllAccounts: accountsRepo.getAll,
@@ -58,7 +56,6 @@ class IncomePage extends StatelessWidget {
         updateItem: repo.saveChanges,
         deleteItem: repo.delete,
       ),
-      useAddButton: true,
     );
   }
 }

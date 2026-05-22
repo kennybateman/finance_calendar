@@ -10,6 +10,7 @@ import '../../domain/models/account.dart';
 import '../shared/date_form_input.dart';
 import '../shared/select_form_input.dart';
 import '../shared/text_form_input.dart';
+import '../shared/crud_edit_page.dart';
 
 class EditIncomePage extends StatefulWidget{
   final GenerateProjectionsUseCase generateProjections;
@@ -34,7 +35,6 @@ class EditIncomePage extends StatefulWidget{
 }
 
 class EditIncomePageState extends State<EditIncomePage> {
-  late bool loading;
   late TextEditingController nameController;
   late TextEditingController amountController;
   late DateTime? dueDate;
@@ -47,21 +47,17 @@ class EditIncomePageState extends State<EditIncomePage> {
   /* need access to all income to enforce name uniqueness */
   late List<Income> allIncome;
 
-  late String errorMessage;
-
   static const String deselectAccountString = '';
 
   @override
   void initState() {
     super.initState();
-    billToForms(widget.income);
-    getAllAccountInfo(); // asynchronous call
-    getAllIncome();
-    errorMessage = "";
-    loading = false;
+    incomeToForm(widget.income);
+    getAllAccounts(); // asynchronous call
+    getAllIncome(); // asynchronous call
   }
 
-  void billToForms(Income income){
+  void incomeToForm(Income income){
     nameController = TextEditingController(text: income.name);
     amountController = TextEditingController(text: currencyCentsToDollarsString(income.amount));
     dueFrequency = income.dueFrequency;
@@ -69,7 +65,7 @@ class EditIncomePageState extends State<EditIncomePage> {
     dueDate = income.dueDate;
   }
 
-  void getAllAccountInfo() async {
+  void getAllAccounts() async {
     final accounts = await widget.getAllAccounts();
 
     var newAccountNames = [ deselectAccountString ] + accounts.map((a) => a.name).toList();
@@ -117,76 +113,6 @@ class EditIncomePageState extends State<EditIncomePage> {
     );
   }
 
-  void update() async {
-    try {
-
-      final updated = formToIncome();
-      if (updated != widget.income){
-        final _ = await widget.updateItem(updated);
-      }
-
-      if (widget.income.keyFieldsChanged(updated)){
-        /* run the generator */
-        
-        setState((){
-          loading = true;
-        });
-        await widget.generateProjections.generateProjections();
-      }
-
-      if (!mounted) return;
-      Navigator.pop(context);
-
-    } on EditException catch(e){
-
-      setState((){
-        errorMessage = e.toString();
-      });
-
-    } on GenerateProjectionsException catch(_){
-      if (!mounted) return;
-      Navigator.pop(context);
-    }
-  }
-
-  void remove() async {
-    try {
-      await widget.deleteItem(widget.income);
-      if (!mounted) return;
-      Navigator.pop(context);
-    } 
-    finally{
-
-    }
-  }
-
-  void create() async {
-    try {
-
-      final created = formToIncome();
-      final _ = await widget.createNew(created);
-
-      /* run the generator */
-      setState((){
-        loading = true;
-      });
-      await widget.generateProjections.generateProjections();
-
-      if (!mounted) return;
-      Navigator.pop(context);
-
-    } on EditException catch(e){
-
-      setState((){
-        errorMessage = e.toString();
-      });
-
-    } on GenerateProjectionsException catch(_){
-      if (!mounted) return;
-      Navigator.pop(context);
-    }
-  }
-
   void onDueDateChange(DateTime date){
     setState((){
       dueDate = date;
@@ -214,42 +140,27 @@ class EditIncomePageState extends State<EditIncomePage> {
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    List<Widget> inputs = [
+  List<Widget> generateUniqueInputs(){
+    return [
       TextFormInput("Name", nameController),
       TextFormInput("Amount", amountController),
       DateFormInput("Due date", dueDate, onDueDateChange),
       SelectFormInput("Frequency", ['monthly', 'bimonthly', 'weekly', 'biweekly'], dueFrequency, dueFrequencyChanged),
       SelectFormInput("Pay to", accountNames, accountsByPk[payToAccountPk]?.name, payToAccountChanged),
     ];
+  }
 
-    if (widget.income.pk == null) {
-      inputs += [
-        SizedBox(height: 24),
-        ElevatedButton(onPressed: create, child: Text("Create")),
-      ];
-    }
-    else{
-      inputs += [
-        SizedBox(height: 24),
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          ElevatedButton(onPressed: update, child: Text("Update")),
-          ElevatedButton(onPressed: remove, child: Text("Remove")),
-        ])
-      ];
-    }
-
-    inputs.add(Text(errorMessage, style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)));
-
-    final loadingBody = const Center(child: CircularProgressIndicator());
-    final body = Padding(padding: EdgeInsets.all(16), child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: inputs));
-
-    return Scaffold(
-      appBar: AppBar(title: Text("Edit Income")),
-      body: IndexedStack(index: loading ? 0 : 1, children: [ loadingBody, body ]),
+  @override
+  Widget build(BuildContext context) {
+    return CrudEditPage<Income>(
+      title: "${widget.income.pk == null ? "Create" : "Edit"}  Income",
+      keyFieldChangedHandler: widget.generateProjections.generateProjections,
+      item: widget.income,
+      createNew: widget.createNew,
+      updateItem: widget.updateItem,
+      deleteItem: widget.deleteItem,
+      formToItem: formToIncome,
+      generateUniqueInputs: generateUniqueInputs,
     );
   }
 }

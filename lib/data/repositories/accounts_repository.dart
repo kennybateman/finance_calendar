@@ -6,6 +6,7 @@ import 'abstract_repository.dart';
 /* DOMAIN LAYER */
 import 'package:finance_calendar/domain/models/account.dart';
 import 'package:finance_calendar/domain/use_cases/helpers.dart';
+import 'package:finance_calendar/domain/models/abstract_domain_model.dart';
 
 class AccountsRepository implements Repository<Account>{
   late AccountsDAO dao;
@@ -13,7 +14,7 @@ class AccountsRepository implements Repository<Account>{
     dao = AccountsDAO(dbWrapper: db);
   }
 
-  Account dataToDomainModel(AccountsRow row){
+  static Account dataToDomainModel(AccountsRow row){
     return Account(
       pk: row.pk,
       name: row.name,
@@ -27,6 +28,7 @@ class AccountsRepository implements Repository<Account>{
       payFromAccountPk: row.pay_from_account_pk,
     );
   }
+
   AccountsRow domainToDataModel(Account entity){
     return AccountsRow(
       pk: entity.pk,
@@ -60,9 +62,22 @@ class AccountsRepository implements Repository<Account>{
 
   @override
   Future<List<Account>> getAll() async { 
-    var accountRows = await dao.getAll();
-    // get all the linked rows. For account, it is just payFromAccount
-    return accountRows.map(dataToDomainModel).toList();
+    final allAccountRows = await dao.getAll();
+    final allAccounts = allAccountRows.map(dataToDomainModel).toList();
+    final allAccountsByPk = mapByPk(allAccounts);
+
+    List<Account> joinedAccountModels = [];
+    for(var account in allAccounts){
+      if (account.accountType != 'credit' || account.payFromAccountPk == null){
+        joinedAccountModels.add(account);
+      }
+      else{
+        final accountToJoin = allAccountsByPk[account.payFromAccountPk];
+        final joinedAccountModel = account.joinPayFromAccount(accountToJoin);
+        joinedAccountModels.add(joinedAccountModel);
+      }
+    }
+    return joinedAccountModels;
   }
 
   @override

@@ -41,10 +41,14 @@ class ProjectionsPage extends StatelessWidget {
     }
 
     return CrudListPage<ProjectionReadModel>(
-      getAll: tryGetAllReadModels,
-      buildTileWidget: toTileWidget,
       preloadHook: generateProjections.generateProjections,
       preloadHookFailHandler: generateProjections.clearProjections,
-      detailPage: (ProjectionReadModel p) => ProjectionDetailPage(projection: p));
+      getAll: tryGetAllReadModels,
+      buildTileWidget: toTileWidget,
+      useAddButton: false,
+      detailPage: (ProjectionReadModel p) => ProjectionDetailPage(
+        projection: p
+      )
+    );
   }
 }

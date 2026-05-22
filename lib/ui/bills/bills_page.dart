@@ -5,7 +5,6 @@ import '../../data/repositories/bills_repository.dart';
 import '../../data/repositories/accounts_repository.dart';
 // DOMAIN
 import '../../domain/models/bill.dart';
-import '../../domain/models/abstract_domain_model.dart';
 import 'package:finance_calendar/domain/use_cases/generate_projections.dart';
 // UI
 import '../shared/crud_list_page.dart';
@@ -35,30 +34,28 @@ class BillsPage extends StatelessWidget {
       );
     }
 
-    Future<List<Bill>> joinExtraModels(List<Bill> unjoinedBills) async {
-      var allAccounts = await accountsRepo.getAll();
-      var accountsbyPk = mapByPk(allAccounts);
-      return unjoinedBills.map((b) => b.joinPayFromAccount(accountsbyPk[b.payFromAccountPk])).toList();
+    Bill createNewTemp(){
+      return Bill(
+        name: "bill", 
+        amount: 0, 
+        dueDate: null, 
+        dueFrequency: 'monthly', 
+        payFromAccountPk: null);
     }
 
     return CrudListPage<Bill>(
       buildTileWidget: toString,
       getAll: repo.getAll,
-      createNew: repo.createNew,
-      updateItem: repo.saveChanges,
-      deleteItem: repo.delete,
-      joinExtraModels: joinExtraModels,
-
-      createEmpty: Bill.createNewTemp,
+      useAddButton: true,
+      createNewTemp: createNewTemp,
       editPage: (Bill b) => EditBillPage(bill: b, 
         generateProjections: generateProjections,
         getAllAccounts: accountsRepo.getAll,
-        getAllBills: repo.getAll,
+        getAll: repo.getAll,
         createNew: repo.createNew,
         updateItem: repo.saveChanges,
         deleteItem: repo.delete,
       ),
-      useAddButton: true,
     );
   }
 }

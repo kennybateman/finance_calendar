@@ -1,16 +1,22 @@
 /* DATA LAYER */
+import 'package:finance_calendar/data/repositories/accounts_repository.dart';
+
 import '../services/database_wrapper.dart';
 import '../daos/income_dao.dart';
+import '../daos/accounts_dao.dart';
 import '../models/income_row.dart';
 import 'abstract_repository.dart';
 /* DOMAIN LAYER */
+import 'package:finance_calendar/domain/models/abstract_domain_model.dart';
 import 'package:finance_calendar/domain/models/income.dart';
 import 'package:finance_calendar/domain/use_cases/helpers.dart';
 
 class IncomeRepository extends Repository<Income>{
   late IncomeDAO dao;
+  late AccountsDAO accountsDao;
   IncomeRepository(DatabaseWrapper db){
     dao = IncomeDAO(dbWrapper: db);
+    accountsDao = AccountsDAO(dbWrapper: db);
   }
 
   Income dataToDomainModel(IncomeRow row){
@@ -36,14 +42,34 @@ class IncomeRepository extends Repository<Income>{
 
   @override
   Future<Income> createNew(Income tmpItem) async {
-    IncomeRow projectionRow = await dao.create(domainToDataModel(tmpItem));
-    return dataToDomainModel(projectionRow);
+    IncomeRow income = await dao.create(domainToDataModel(tmpItem));
+    return dataToDomainModel(income);
   }
 
   @override
   Future<List<Income>> getAll() async { 
-    var projectionRows = await dao.getAll();
-    return projectionRows.map(dataToDomainModel).toList();
+    var allIncomeRows = await dao.getAll();
+
+    var allIncome = allIncomeRows.map(dataToDomainModel).toList();
+
+    var requiredAccountPks = allIncomeRows.where((i) => i.pay_to_account_pk != null).map((i)=> i.pay_to_account_pk!).toList();
+    var requiredAccountsRows = await accountsDao.getMultiple(requiredAccountPks);
+    var requiredAccounts = requiredAccountsRows.map(AccountsRepository.dataToDomainModel).toList();
+    var requiredAccountsByPk = mapByPk(requiredAccounts);
+
+    List<Income> joinedIncomeModels = [];
+    for(var income in allIncome){
+      if (income.payToAccountPk == null){
+        joinedIncomeModels.add(income);
+      }
+      else{
+        final accountToJoin = requiredAccountsByPk[income.payToAccountPk];
+        final joinedIncomeModel = income.joinPayToAccount(accountToJoin);
+        joinedIncomeModels.add(joinedIncomeModel);
+
+      }
+    }
+    return joinedIncomeModels;
   }
 
   @override

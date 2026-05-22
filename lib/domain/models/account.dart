@@ -62,20 +62,6 @@ class Account extends DomainModel<Account> {
     payFromAccountPk
   ]);
 
-  static Account createNewTemp(){
-    return Account(
-      name: 'new account', 
-      balance: 0, 
-      balanceDate: null, 
-      accountType: 'debit', 
-      creditLimit: 0,
-      interest: 0,
-      dueFrequency: 'monthly',
-      dueDate: null,
-      payFromAccountPk: null,
-    );
-  }
-
   Account updateValue({
     int? pk, 
     String? name,

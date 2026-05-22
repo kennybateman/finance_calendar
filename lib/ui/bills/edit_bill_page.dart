@@ -10,11 +10,12 @@ import '../../domain/models/account.dart';
 import '../shared/date_form_input.dart';
 import '../shared/select_form_input.dart';
 import '../shared/text_form_input.dart';
+import '../shared/crud_edit_page.dart';
 
 class EditBillPage extends StatefulWidget{
   final GenerateProjectionsUseCase generateProjections;
   final Future<List<Account>> Function() getAllAccounts;
-  final Future<List<Bill>> Function() getAllBills;
+  final Future<List<Bill>> Function() getAll;
   final Future<Bill>          Function(Bill) createNew;  // C
   final Bill bill;                                       // R (bill being edited)
   final Future<Bill>          Function(Bill) updateItem; // U
@@ -23,7 +24,7 @@ class EditBillPage extends StatefulWidget{
     required this.generateProjections,
     required this.bill,
     required this.getAllAccounts,
-    required this.getAllBills,
+    required this.getAll,
     required this.createNew,
     required this.updateItem,
     required this.deleteItem,
@@ -34,7 +35,6 @@ class EditBillPage extends StatefulWidget{
 }
 
 class EditBillPageState extends State<EditBillPage> {
-  late bool loading;
   late GenerateProjectionsUseCase generateProjections;
   late TextEditingController nameController;
   late TextEditingController amountController;
@@ -48,20 +48,15 @@ class EditBillPageState extends State<EditBillPage> {
   /* need access to all bill names to prevent saving duplicate names */
   late List<Bill> allBills;
 
-  late String errorMessage;
-
   static const String deselectAccountString = '';
 
   @override
   void initState() {
     super.initState();
     billToForms(widget.bill);
-    getAllAccountInfo(); // asynchronous call
-    getAllBills();
-    errorMessage = "";
-    loading = false;
+    getAllAccounts(); // asynchronous call
+    getAllBills(); // async
   }
-
 
   void billToForms(Bill bill){
     nameController = TextEditingController(text: bill.name);
@@ -71,15 +66,7 @@ class EditBillPageState extends State<EditBillPage> {
     dueDate = bill.dueDate;
   }
 
-
-  void getAllBills() async {
-    final bills = await widget.getAllBills();
-    setState((){
-      allBills = bills;
-    });
-  }
-
-  void getAllAccountInfo() async {
+  void getAllAccounts() async {
     final accounts = await widget.getAllAccounts();
 
     var newAccountNames = [ deselectAccountString ] + accounts.map((a) => a.name).toList();
@@ -96,6 +83,13 @@ class EditBillPageState extends State<EditBillPage> {
     });
   }
 
+  void getAllBills() async {
+    final bills = await widget.getAll();
+    setState((){
+      allBills = bills;
+    });
+  }
+
   void validateInput() {
     /* Database doesn't allow same names. Don't rely on that though. Catch it here */
     final newName = nameController.text;
@@ -109,9 +103,7 @@ class EditBillPageState extends State<EditBillPage> {
   }
 
   Bill formToBill() {
-    
     validateInput();
-
     return Bill(
       pk: widget.bill.pk,
       name: nameController.text,
@@ -120,76 +112,6 @@ class EditBillPageState extends State<EditBillPage> {
       payFromAccountPk: payFromAccountPk,
       dueDate: dueDate,
     );
-  }
-
-  void update() async {
-    try {
-
-      final updated = formToBill();
-      if (updated != widget.bill){
-        final _ = await widget.updateItem(updated);
-      }
-
-      if (widget.bill.keyFieldsChanged(updated)){
-        /* run the generator */
-        setState((){
-          loading = true;
-        });
-        await widget.generateProjections.generateProjections();
-      }
-
-      if (!mounted) return;
-      Navigator.pop(context);
-
-    } on EditException catch(e){
-
-      setState((){
-        errorMessage = e.toString();
-      });
-
-    } on GenerateProjectionsException catch(_){
-      if (!mounted) return;
-      Navigator.pop(context);
-    }
-  }
-
-  void remove() async {
-    try {
-      await widget.deleteItem(widget.bill);
-      if (!mounted) return;
-      Navigator.pop(context);
-    } 
-    finally{
-
-    }
-  }
-
-  void create() async {
-    try {
-
-      final created = formToBill();
-      final _ = await widget.createNew(created);
-
-      /* run the generator */
-      setState((){
-        loading = true;
-      });
-      
-      await widget.generateProjections.generateProjections();
-
-      if (!mounted) return;
-      Navigator.pop(context);
-
-    } on EditException catch(e){
-
-      setState((){
-        errorMessage = e.toString();
-      });
-
-    } on GenerateProjectionsException catch(_){
-      if (!mounted) return;
-      Navigator.pop(context);
-    }
   }
 
   void onDueDateChange(DateTime date){
@@ -219,42 +141,27 @@ class EditBillPageState extends State<EditBillPage> {
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    List<Widget> inputs = [
+  List<Widget> generateUniqueInputs(){
+    return [
       TextFormInput("Name", nameController),
       TextFormInput("Amount", amountController),
       DateFormInput("Due date", dueDate, onDueDateChange),
       SelectFormInput("Frequency", ['monthly', 'bimonthly', 'weekly', 'biweekly'], dueFrequency, dueFrequencyChanged),
       SelectFormInput("Pay from", accountNames, accountsByPk[payFromAccountPk]?.name, payFromAccountChanged),
     ];
+  }
 
-    if (widget.bill.pk == null) {
-      inputs += [
-        SizedBox(height: 24),
-        ElevatedButton(onPressed: create, child: Text("Create")),
-      ];
-    }
-    else{
-      inputs += [
-        SizedBox(height: 24),
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          ElevatedButton(onPressed: update, child: Text("Update")),
-          ElevatedButton(onPressed: remove, child: Text("Remove")),
-        ])
-      ];
-    }
-
-    inputs.add(Text(errorMessage, style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)));
-
-    final loadingBody = const Center(child: CircularProgressIndicator());
-    final body = Padding(padding: EdgeInsets.all(16), child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: inputs));
-
-    return Scaffold(
-      appBar: AppBar(title: Text("Edit Bill")),
-      body: IndexedStack(index: loading ? 0 : 1, children: [ loadingBody, body ]),
+  @override
+  Widget build(BuildContext context) {
+    return CrudEditPage<Bill>(
+      title: "${widget.bill.pk == null ? "Create" : "Edit"} Bill",
+      keyFieldChangedHandler: widget.generateProjections.generateProjections,
+      item: widget.bill,
+      createNew: widget.createNew,
+      updateItem: widget.updateItem,
+      deleteItem: widget.deleteItem,
+      formToItem: formToBill,
+      generateUniqueInputs: generateUniqueInputs,
     );
   }
 }

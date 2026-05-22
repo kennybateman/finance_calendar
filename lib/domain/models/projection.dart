@@ -54,7 +54,7 @@ class Projection extends DomainModel<Projection> {
     throw Exception("not implemented");  
   }
 
-  static Projection createNewTemp(DateTime date){
+  Projection createNewWithDate(DateTime date){
     return Projection(date: date);
   }
 }

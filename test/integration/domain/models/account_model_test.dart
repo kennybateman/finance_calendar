@@ -24,7 +24,18 @@ void main() {
 
 
   test('Verify basic properties of Account model', () async {
-    var unsavedAccount = Account.createNewTemp();
+    var unsavedAccount = Account(
+        name: 'new account', 
+        balance: 0, 
+        balanceDate: null, 
+        accountType: 'debit', 
+        creditLimit: 0,
+        interest: 0,
+        dueFrequency: 'monthly',
+        dueDate: null,
+        payFromAccountPk: null,
+      );
+
     expect(unsavedAccount.pk, null);
 
     var savedAccount = await repo.createNew(unsavedAccount);

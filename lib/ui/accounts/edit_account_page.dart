@@ -9,10 +9,11 @@ import '../../domain/use_cases/generate_projections.dart';
 import '../shared/date_form_input.dart';
 import '../shared/select_form_input.dart';
 import '../shared/text_form_input.dart';
+import '../shared/crud_edit_page.dart';
 
 class EditAccountPage extends StatefulWidget{
   final GenerateProjectionsUseCase generateProjections;
-  final Future<List<Account>> Function() getAllAccounts;    // For selecting credit interest pay from account
+  final Future<List<Account>> Function() getAll;
   final Future<Account>       Function(Account) createNew;  // C
   final Account account;                                    // R (account being edited)
   final Future<Account>       Function(Account) updateItem; // U
@@ -20,7 +21,7 @@ class EditAccountPage extends StatefulWidget{
   const EditAccountPage({super.key,
     required this.generateProjections,
     required this.account,
-    required this.getAllAccounts,
+    required this.getAll,
     required this.createNew,
     required this.updateItem,
     required this.deleteItem,
@@ -31,8 +32,6 @@ class EditAccountPage extends StatefulWidget{
 }
 
 class EditAccountPageState extends State<EditAccountPage> {
-  late bool loading;
-  /* Use text controllers for any form that allows typing */
   late TextEditingController nameController;            // name (TEXT CONTROLLER)
   late TextEditingController balanceController;         // balance (TEXT CONTROLLER)
   late DateTime? balanceDate;                           // balance date
@@ -48,8 +47,6 @@ class EditAccountPageState extends State<EditAccountPage> {
   late List<String> accountNames = ['loading']; // display account names for the selection
   late Map<int?, Account?> accountsByPk = { null: null };
 
-  late String errorMessage;
-
   /* perfect example of something to go into a view model */
   static const String deselectAccountString = '';
   static const String payFromThisAccountString = 'Pay from this account';
@@ -58,9 +55,7 @@ class EditAccountPageState extends State<EditAccountPage> {
   void initState() {
     super.initState();
     accountToForms(widget.account);
-    getAllAccountInfo();
-    errorMessage = '';
-    loading = false;
+    getAllAccounts();
   }
 
   void accountToForms(Account account){
@@ -76,9 +71,9 @@ class EditAccountPageState extends State<EditAccountPage> {
     payFromThisAccount = account.payFromThisAccount;
   }
 
-  void getAllAccountInfo() async {
+  void getAllAccounts() async {
     final editing = widget.account.pk != null;
-    final accounts = await widget.getAllAccounts();
+    final accounts = await widget.getAll();
 
     /* 
       If this is the first account (credit), we want to allow the user to set it as the pay from account.
@@ -106,23 +101,6 @@ class EditAccountPageState extends State<EditAccountPage> {
     });
   }
 
-  Account formToAccount(){
-    validateInput();
-
-    return Account(
-      pk: widget.account.pk,
-      name: nameController.text,
-      balance: dollarsStringToCurrencyCents(balanceController.text),
-      balanceDate: balanceDate,
-      accountType: accountType,
-      creditLimit: dollarsStringToCurrencyCents(creditLimitController.text),
-      interest: dollarsStringToCurrencyCents(creditInterestController.text),
-      dueFrequency: creditInterestDueFrequency,
-      dueDate: creditInterestDueDate,
-      payFromAccountPk: creditInterestPayFromAccountPk,
-    );
-  }
-
   void validateInput(){
     /* Database doesn't allow same names. Don't rely on that though. Catch it here */
     final newName = nameController.text;
@@ -135,73 +113,20 @@ class EditAccountPageState extends State<EditAccountPage> {
     }
   }
 
-  void update() async {
-    try {
-
-      final updated = formToAccount();
-      if (updated != widget.account){
-        final _ = await widget.updateItem(updated);
-      }
-
-      if (widget.account.keyFieldsChanged(updated)){
-        /* run the generator */
-        setState((){
-          loading = true;
-        });
-        await widget.generateProjections.generateProjections();
-      }
-
-      if (!mounted) return;
-      Navigator.pop(context);
-
-    } on EditException catch(e){
-
-      setState((){
-        errorMessage = e.toString();
-      });
-
-    } on GenerateProjectionsException catch(_){
-      if (!mounted) return;
-      Navigator.pop(context);
-    }
-  }
-
-  void remove() async {
-    try {
-      await widget.deleteItem(widget.account);
-      if (!mounted) return;
-      Navigator.pop(context);
-    } 
-    finally{
-
-    }
-  }
-
-  void create() async {
-    try {
-
-      final created = formToAccount();
-      final _ = await widget.createNew(created);
-
-      /* run the generator */
-      setState((){
-        loading = true;
-      });
-      await widget.generateProjections.generateProjections();
-        
-      if (!mounted) return;
-      Navigator.pop(context);
-
-    } on EditException catch(e){
-
-      setState((){
-        errorMessage = e.toString();
-      });
-      
-    } on GenerateProjectionsException catch(_){
-      if (!mounted) return;
-      Navigator.pop(context);
-    }
+  Account formToAccount(){
+    validateInput();
+    return Account(
+      pk: widget.account.pk,
+      name: nameController.text,
+      balance: dollarsStringToCurrencyCents(balanceController.text),
+      balanceDate: balanceDate,
+      accountType: accountType,
+      creditLimit: dollarsStringToCurrencyCents(creditLimitController.text),
+      interest: dollarsStringToCurrencyCents(creditInterestController.text),
+      dueFrequency: creditInterestDueFrequency,
+      dueDate: creditInterestDueDate,
+      payFromAccountPk: creditInterestPayFromAccountPk,
+    );
   }
 
   void onDueDateChange(DateTime date){
@@ -258,9 +183,8 @@ class EditAccountPageState extends State<EditAccountPage> {
     return accountsByPk[creditInterestPayFromAccountPk]?.name;
   }
 
-  @override
-  Widget build(BuildContext context) {
-    List<Widget> inputs = [
+  List<Widget> generateUniqueInputs(){
+      List<Widget> inputs = [
       TextFormInput("Name", nameController),
       TextFormInput("Balance", balanceController),
       DateFormInput("Balance date", balanceDate, onBalanceDateChange),
@@ -275,34 +199,21 @@ class EditAccountPageState extends State<EditAccountPage> {
         DateFormInput("Interest Due date", creditInterestDueDate, onDueDateChange),
         SelectFormInput("Pay from", accountNames, getDefaultPayFromSelection(), payFromAccountChanged),
       ];
-    }
+    }  
+    return inputs;
+  }
 
-    if (widget.account.pk == null) {
-      inputs += [
-        SizedBox(height: 24),
-        ElevatedButton(onPressed: create, child: Text("Create")),
-      ];
-    }
-    else{
-      inputs += [
-        SizedBox(height: 24),
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          ElevatedButton(onPressed: update, child: Text("Update")),
-          ElevatedButton(onPressed: remove, child: Text("Remove")),
-        ]),
-      ];
-    }
-
-    inputs.add(Text(errorMessage, style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)));
-
-    final loadingBody = const Center(child: CircularProgressIndicator());
-    var body = Padding(padding: EdgeInsets.all(16), child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: inputs));
-
-    return Scaffold(
-      appBar: AppBar(title: Text("Edit Account")),
-      body: IndexedStack(index: loading ? 0 : 1, children: [ loadingBody, body ]),
+  @override
+  Widget build(BuildContext context) {
+    return CrudEditPage<Account>(
+      title: "${widget.account.pk == null ? "Create" : "Edit"} Account",
+      keyFieldChangedHandler: widget.generateProjections.generateProjections,
+      item: widget.account,
+      createNew: widget.createNew,
+      updateItem: widget.updateItem,
+      deleteItem: widget.deleteItem,
+      formToItem: formToAccount,
+      generateUniqueInputs: generateUniqueInputs,
     );
   }
 }

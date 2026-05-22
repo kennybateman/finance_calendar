@@ -53,15 +53,6 @@ class Bill extends DomainModel<Bill>{
     payFromAccountPk,
   ]);
 
-  static Bill createNewTemp(){
-    return Bill(
-      name: "bill", 
-      amount: 0, 
-      dueDate: null, 
-      dueFrequency: 'monthly', 
-      payFromAccountPk: null);
-  }
-
   Bill updateValue({
     int? pk,
     String? name,

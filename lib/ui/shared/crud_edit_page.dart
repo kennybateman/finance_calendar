@@ -9,33 +9,28 @@ import 'package:finance_calendar/domain/use_cases/edit_exception.dart';
 // import '../shared/text_form_input.dart';
 
 class CrudEditPage<T extends DomainModel<T>> extends StatefulWidget{
-  final Future<void> Function() generateProjections;
-
-  final Future<List<DomainModel>> Function() getSupportingModels;
+  final String title;
   final Future<T>       Function(T) createNew;  // C
   final T item;                                 // R (account being edited)
   final Future<T>       Function(T) updateItem; // U
   final Future<void>    Function(T) deleteItem; // D
 
-  final void Function(T) itemToForms;
   final T Function() formToItem;
 
-  final void Function() validateInput;
+  final Future<void> Function() keyFieldChangedHandler;
 
-  final List<Widget> inputs;
+  final List<Widget> Function() generateUniqueInputs;
 
   const CrudEditPage({
     super.key,
-    required this.generateProjections,
+    this.title="",
+    required this.keyFieldChangedHandler,
     required this.item,
-    required this.getSupportingModels,
     required this.createNew,
     required this.updateItem,
     required this.deleteItem,
-    required this.itemToForms,
     required this.formToItem,
-    required this.validateInput,
-    required this.inputs,
+    required this.generateUniqueInputs,
   });
 
   @override
@@ -50,11 +45,30 @@ class CrudEditPageState<T extends DomainModel<T>> extends State<CrudEditPage<T>>
   @override
   void initState() {
     super.initState();
-    widget.itemToForms(widget.item);
-    widget.getSupportingModels();
     errorMessage = '';
     loading = false;
-    inputs = widget.inputs;
+  }
+
+  List<Widget> generateCommonWidgets(){
+    List<Widget> crudWidgets = [];
+    if (widget.item.pk == null) {
+      crudWidgets += [
+        SizedBox(height: 24),
+        ElevatedButton(onPressed: create, child: Text("Create")),
+      ];
+    }
+    else{
+      crudWidgets += [
+        SizedBox(height: 24),
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          ElevatedButton(onPressed: update, child: Text("Update")),
+          ElevatedButton(onPressed: remove, child: Text("Remove")),
+        ]),
+      ];
+    }
+    /* error widget at the bottom */
+    crudWidgets.add(Text(errorMessage, style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)));
+    return crudWidgets;
   }
 
   void update() async {
@@ -66,10 +80,12 @@ class CrudEditPageState<T extends DomainModel<T>> extends State<CrudEditPage<T>>
       }
 
       if (widget.item.keyFieldsChanged(updated)){
+
         setState((){
           loading = true;
         });
-        await widget.generateProjections();
+
+        await widget.keyFieldChangedHandler();
       }
 
       if (!mounted) return;
@@ -81,8 +97,13 @@ class CrudEditPageState<T extends DomainModel<T>> extends State<CrudEditPage<T>>
         errorMessage = e.toString();
       });
 
-    } on Exception catch(_){
+    } on Exception catch(e){
       if (!mounted) return;
+
+      setState((){
+        errorMessage = e.toString();
+      });  
+
       Navigator.pop(context);
     }
   }
@@ -99,37 +120,54 @@ class CrudEditPageState<T extends DomainModel<T>> extends State<CrudEditPage<T>>
   }
 
   void create() async {
+    try {
 
+      final created = widget.formToItem();
+      final _ = await widget.createNew(created);
+
+      /* run the generator */
+      setState((){
+        loading = true;
+      });
+
+      await widget.keyFieldChangedHandler();
+        
+      if (!mounted) return;
+      Navigator.pop(context);
+
+    } on EditException catch(e){
+
+      setState((){
+        errorMessage = e.toString();
+      });
+      
+    } on Exception catch(e){
+      if (!mounted) return;
+
+      setState((){
+        errorMessage = e.toString();
+      });
+
+      Navigator.pop(context);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-
-    if (widget.item.pk == null) {
-      inputs += [
-        SizedBox(height: 24),
-        ElevatedButton(onPressed: create, child: Text("Create")),
-      ];
-    }
-    else{
-      inputs += [
-        SizedBox(height: 24),
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          ElevatedButton(onPressed: update, child: Text("Update")),
-          ElevatedButton(onPressed: remove, child: Text("Remove")),
-        ]),
-      ];
-    }
-
-    inputs.add(Text(errorMessage, style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)));
+    var inputs = widget.generateUniqueInputs() + generateCommonWidgets();
 
     final loadingBody = const Center(child: CircularProgressIndicator());
-    var body = Padding(padding: EdgeInsets.all(16), child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: inputs));
+    /* why is this so complicated looking? I didn't add zooming here... */
+    var body = Padding(
+      padding: EdgeInsets.all(16), 
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+          children: inputs
+      )
+    );
 
     return Scaffold(
-      appBar: AppBar(title: Text("Edit Account")),
+      appBar: AppBar(title: Text(widget.title)),
       body: IndexedStack(index: loading ? 0 : 1, children: [ loadingBody, body ]),
     );
   }

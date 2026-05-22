@@ -30,6 +30,13 @@ abstract class DAO<T extends DatabaseRow> {
     return results.map(fromMap).firstOrNull;
   }
 
+  Future<List<T>> getMultiple(List<int> pks) async {
+    final db = dbWrapper.database;
+    final placeholders = List.filled(pks.length, '?').join(',');
+    final results = await db.query(tableName,  where: 'pk in ($placeholders)', whereArgs: pks);
+    return results.map(fromMap).toList();   
+  }
+
   Future<List<T>> getAllBy(String field, dynamic value) async {
     final db = dbWrapper.database;
     final results = await db.query(tableName,  where: '$field = ?', whereArgs: [value]);

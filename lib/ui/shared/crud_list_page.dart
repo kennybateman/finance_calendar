@@ -7,35 +7,26 @@ class CrudListPage<T extends DomainModel<T>> extends StatefulWidget {
   final Future<void> Function()? preloadHook;
   final Future<void> Function()? preloadHookFailHandler;
 
-  final Future<T>       Function(T empty)? createNew;  // C
-  final Future<List<T>> Function()         getAll;     // R - mandatory
-  final Future<T>       Function(T)?       updateItem; // U
-  final Future<void>    Function(T)?       deleteItem; // D
+  final Future<List<T>> Function() getAll;
+  final Widget Function(T, double) buildTileWidget;
   
-  final T      Function()?       createEmpty;
+  final bool useAddButton;
+  final T Function()? createNewTemp;
   final Widget Function(T item)? editPage;
   final Widget Function(T item)? detailPage;
 
-  final Widget Function(T, double) buildTileWidget;
-
-  final Future<List<T>> Function(List<T>)? joinExtraModels;
-
-  final bool useAddButton;
-
   const CrudListPage({
     super.key,
-    required this.buildTileWidget,
-    required this.getAll,
-    this.createNew,
-    this.updateItem,
-    this.deleteItem,
-    this.joinExtraModels,
-    this.createEmpty,
-    this.editPage,
-    this.detailPage,
     this.preloadHook,
     this.preloadHookFailHandler,
-    this.useAddButton = false,
+
+    required this.getAll,
+    required this.buildTileWidget,
+
+    required this.useAddButton,
+    this.createNewTemp,
+    this.editPage,
+    this.detailPage,
   });
 
   @override
@@ -43,17 +34,23 @@ class CrudListPage<T extends DomainModel<T>> extends StatefulWidget {
 }
 
 class CrudListPageState<T extends DomainModel<T>> extends State<CrudListPage<T>> {
-  List<T> items = [];
-  bool loading = true;
-  String status = "";
-
-  /* pinch zoom variables */
-  double startScale = 1.0;
-  double scale = 1.0;
+  late bool loading = true;
+  late String statusMessage = "";
+  late List<T> items = [];
+  
+  /* zoom variables */
+  late double startScale = 1.0;
+  late double scale = 1.0;
 
   @override
   void initState(){
     super.initState();
+    loading = true;
+    statusMessage = "";
+
+    /* zoom variables */
+    startScale = 1.0;
+    scale = startScale;
     loadItems(); // async call
   }
 
@@ -74,17 +71,12 @@ class CrudListPageState<T extends DomainModel<T>> extends State<CrudListPage<T>>
         }
         
         setState((){
-          status = exception.toString();
+          statusMessage = exception.toString();
         });
       }
     }
 
     var all = await widget.getAll(); 
-
-    /* this should totally be the job of the repo */
-    if (widget.joinExtraModels != null){
-      all = await widget.joinExtraModels!(all);
-    }
 
     setState((){
       items = all;
@@ -101,16 +93,16 @@ class CrudListPageState<T extends DomainModel<T>> extends State<CrudListPage<T>>
       MaterialPageRoute(builder: (_) => subPage(item)),
     );
 
-    /* should probably to the preload hook again here */
+    /* should probably do the preload hook again here */
     await loadItems();
   }
 
   @override
   Widget build(BuildContext context) {
-    final error = status != "";
+    final error = statusMessage != "";
 
     final appBar = AppBar(
-      title: Text(status, 
+      title: Text(statusMessage, 
       style: TextStyle(
         color: error ? Colors.red : Colors.black, 
         fontWeight: FontWeight.bold
@@ -160,7 +152,7 @@ class CrudListPageState<T extends DomainModel<T>> extends State<CrudListPage<T>>
     final addButton = FloatingActionButton(
         heroTag: null, // this fixes some crazy bug that exceptions when opening the page. No clue why either. 
         onPressed: () async { 
-          final empty = widget.createEmpty!();
+          final empty = widget.createNewTemp!();
           openEditPageAndHandleChanges(empty, context);
         },
         child: const Icon(Icons.add),

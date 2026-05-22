@@ -5,7 +5,6 @@ import '../../data/repositories/accounts_repository.dart';
 // DOMAIN
 import 'package:finance_calendar/domain/use_cases/helpers.dart';
 import 'package:finance_calendar/domain/use_cases/generate_projections.dart';
-import '../../domain/models/abstract_domain_model.dart';
 import '../../domain/models/account.dart';
 // UI
 import '../shared/crud_list_page.dart';
@@ -51,29 +50,32 @@ class AccountsPage extends StatelessWidget {
       );
     }
 
-    Future<List<Account>> joinExtraModels(List<Account> unjoinedAccounts) async {
-      var allAccounts = await repo.getAll();
-      var accountsbyPk = mapByPk(allAccounts);
-      return unjoinedAccounts.map((a) => a.joinPayFromAccount(accountsbyPk[a.payFromAccountPk])).toList();
+    Account createNewTemp(){
+      return Account(
+        name: 'new account', 
+        balance: 0, 
+        balanceDate: null, 
+        accountType: 'debit', 
+        creditLimit: 0,
+        interest: 0,
+        dueFrequency: 'monthly',
+        dueDate: null,
+        payFromAccountPk: null,
+      );
     }
 
     return CrudListPage<Account>(
       buildTileWidget: toString,
       getAll: repo.getAll,
-      createNew: repo.createNew,
-      updateItem: repo.saveChanges,
-      deleteItem: repo.delete,
-      joinExtraModels: joinExtraModels,
-
-      createEmpty: Account.createNewTemp,
+      useAddButton: true,
+      createNewTemp: createNewTemp,
       editPage: (Account a) => EditAccountPage(account: a, 
         generateProjections: generateProjections,
-        getAllAccounts: repo.getAll, 
+        getAll: repo.getAll, 
         createNew: repo.createNew,
         updateItem: repo.saveChanges,
         deleteItem: repo.delete,
       ),
-      useAddButton: true,
     );
   }
 }

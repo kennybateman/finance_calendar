@@ -53,15 +53,6 @@ class Income extends DomainModel<Income> {
     payToAccountPk,
   ]);
 
-  static Income createNewTemp(){
-    return Income(
-      name: "income", 
-      amount: 0, 
-      dueDate: null, 
-      dueFrequency: 'biweekly', 
-      payToAccountPk: null);
-  }
-
   Income updateValue({
     int? pk,
     String? name,

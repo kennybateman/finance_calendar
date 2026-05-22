@@ -4,6 +4,9 @@
 # Allow just the directories with work, ignore generated stuff
 !graphics/
 !lib/
+!lib/ui
+!lib/data
+!lib/domain
 !test/
 
 # Allow specific root files

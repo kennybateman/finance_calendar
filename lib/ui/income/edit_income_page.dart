@@ -1,21 +1,23 @@
 // Dart and Flutter
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 // DOMAIN
 import '../../domain/models/income.dart';
 import '../../domain/use_cases/helpers.dart';
 import '../../domain/use_cases/edit_exception.dart';
 import '../../domain/use_cases/generate_projections.dart';
-import '../../domain/models/account.dart';
 // UI
 import '../shared/date_form_input.dart';
 import '../shared/select_form_input.dart';
 import '../shared/text_form_input.dart';
 import '../shared/crud_edit_page.dart';
 
+import 'dart:developer' as developer;
+
 class EditIncomePage extends StatefulWidget{
   final GenerateProjectionsUseCase generateProjections;
-  final Future<List<Account>> Function() getAllAccounts;
-  final Future<List<Income>>  Function() getAllIncome;
+  final Future<List<({int pk, String name})>> Function() getAccountNames;
+  final Future<List<({int pk, String name})>> Function() getIncomeNames;
   final Future<Income>        Function(Income) createNew;  // C
   final Income income;                                     // R (bill being edited)
   final Future<Income>        Function(Income) updateItem; // U
@@ -23,8 +25,8 @@ class EditIncomePage extends StatefulWidget{
   const EditIncomePage({super.key, 
     required this.generateProjections,
     required this.income,
-    required this.getAllAccounts,
-    required this.getAllIncome,
+    required this.getAccountNames,
+    required this.getIncomeNames,
     required this.createNew,
     required this.updateItem,
     required this.deleteItem,
@@ -40,12 +42,9 @@ class EditIncomePageState extends State<EditIncomePage> {
   late DateTime? dueDate;
   late String dueFrequency;
   late int? payToAccountPk;
-  /* need access to all accounts ot allow changing pay from account */
-  late List<Account> allAccounts;
-  late List<String> accountNames = ['loading']; // display account names for the selection
-  late Map<int?, Account?> accountsByPk = { null: null };
-  /* need access to all income to enforce name uniqueness */
-  late List<Income> allIncome;
+
+  late List<({int? pk, String name})> accountNames = [ ];
+  late List<({int pk, String name})> incomeNames = [ ];
 
   static const String deselectAccountString = '';
 
@@ -57,6 +56,13 @@ class EditIncomePageState extends State<EditIncomePage> {
     getAllIncome(); // asynchronous call
   }
 
+  @override
+  void dispose() {
+    nameController.dispose();
+    amountController.dispose();
+    super.dispose();
+  }
+
   void incomeToForm(Income income){
     nameController = TextEditingController(text: income.name);
     amountController = TextEditingController(text: currencyCentsToDollarsString(income.amount));
@@ -66,36 +72,34 @@ class EditIncomePageState extends State<EditIncomePage> {
   }
 
   void getAllAccounts() async {
-    final accounts = await widget.getAllAccounts();
+    final List<({int? pk, String name})> pkNameTuples = await widget.getAccountNames();
+    /* add a null account for deselecting */
+    final List<({int? pk, String name})> newAccountNames = [ ( pk: null as int?, name: deselectAccountString) ] + pkNameTuples;
 
-    var newAccountNames = [ deselectAccountString ] + accounts.map((a) => a.name).toList();
-
-    Map<int?, Account?> newAccountsByPk = {};
-    for(var account in accounts){
-      newAccountsByPk[account.pk] = account;
-    }
-
+    if (!mounted) return;
     setState((){
-      allAccounts = accounts;
       accountNames = newAccountNames;
-      accountsByPk = newAccountsByPk;
     });
   }
 
   void getAllIncome() async {
-    final income = await widget.getAllIncome();
+    final pkNameTuples = await widget.getIncomeNames();
+
+    if (!mounted) return;
     setState((){
-      allIncome = income;
+      incomeNames = pkNameTuples;
     });
   }
 
   void validateInput() {
     /* Database doesn't allow same names. Don't rely on that though. Catch it here */
     final newName = nameController.text;
-    for(var income in allIncome){
-      /* allIncome all have pks, widget.income might not, either way, we are allowed to change the name */
-      if (income.pk == widget.income.pk) continue;
-      if (newName == income.name){
+    developer.log("need to make sure no income names match $newName ...");
+    for(var pkNameTuple in incomeNames){
+      developer.log("checking: ${pkNameTuple.name}");
+      if (pkNameTuple.pk == widget.income.pk) continue;
+      
+      if (newName == pkNameTuple.name){
         throw EditException("Existing Income already uses this name");
       }
     }
@@ -126,7 +130,7 @@ class EditIncomePageState extends State<EditIncomePage> {
       newPk = null;
     }
     else{
-      newPk = allAccounts.firstWhere((a) => a.name == selectedAccountName).pk;
+      newPk = accountNames.firstWhere((a) => a.name == selectedAccountName).pk;
     }
 
     setState((){
@@ -140,14 +144,17 @@ class EditIncomePageState extends State<EditIncomePage> {
     });
   }
 
-  List<Widget> generateUniqueInputs(){
-    return [
+  Widget buildItemForm(){
+    return Column(children: [
       TextFormInput("Name", nameController),
       TextFormInput("Amount", amountController),
       DateFormInput("Due date", dueDate, onDueDateChange),
       SelectFormInput("Frequency", ['monthly', 'bimonthly', 'weekly', 'biweekly'], dueFrequency, dueFrequencyChanged),
-      SelectFormInput("Pay to", accountNames, accountsByPk[payToAccountPk]?.name, payToAccountChanged),
-    ];
+      SelectFormInput("Pay to", 
+        accountNames.map((a)=>a.name).toList(), 
+        accountNames.firstWhereOrNull((an) => an.pk == payToAccountPk)?.name, 
+        payToAccountChanged),
+    ]);
   }
 
   @override
@@ -156,11 +163,11 @@ class EditIncomePageState extends State<EditIncomePage> {
       title: "${widget.income.pk == null ? "Create" : "Edit"}  Income",
       keyFieldChangedHandler: widget.generateProjections.generateProjections,
       item: widget.income,
-      createNew: widget.createNew,
+      createItem: widget.createNew,
       updateItem: widget.updateItem,
       deleteItem: widget.deleteItem,
       formToItem: formToIncome,
-      generateUniqueInputs: generateUniqueInputs,
+      buildItemForm: buildItemForm,
     );
   }
 }

@@ -69,6 +69,11 @@ class BillsRepository extends Repository<Bill>{
     return joinedBillModels;
   }
 
+  Future<List<(int, String)>> getAllNames() async { 
+    final idNameTuples = await dao.getAllNames();
+    return idNameTuples;
+  }
+
   @override
   Future<Bill> saveChanges(Bill itemWithChanges) async{
     BillsRow row = domainToDataModel(itemWithChanges);

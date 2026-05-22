@@ -80,6 +80,11 @@ class AccountsRepository implements Repository<Account>{
     return joinedAccountModels;
   }
 
+  Future<List<({int pk, String name})>> getAllNames() async { 
+    final idNameTuples = await dao.getAllNames();
+    return idNameTuples;
+  }
+
   @override
   Future<Account> saveChanges(Account itemWithChanges) async{
     AccountsRow row = domainToDataModel(itemWithChanges);

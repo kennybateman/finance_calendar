@@ -58,6 +58,13 @@ class EditBillPageState extends State<EditBillPage> {
     getAllBills(); // async
   }
 
+  @override
+  void dispose() {
+    nameController.dispose();
+    amountController.dispose();
+    super.dispose();
+  }
+
   void billToForms(Bill bill){
     nameController = TextEditingController(text: bill.name);
     amountController = TextEditingController(text: currencyCentsToDollarsString(bill.amount));
@@ -75,6 +82,8 @@ class EditBillPageState extends State<EditBillPage> {
     for(var account in accounts){
       newAccountsByPk[account.pk] = account;
     }
+
+    if (!mounted) return;
 
     setState((){
       allAccounts = accounts;
@@ -141,14 +150,14 @@ class EditBillPageState extends State<EditBillPage> {
     });
   }
 
-  List<Widget> generateUniqueInputs(){
-    return [
+  Widget buildItemForm(){
+    return Column(children: [
       TextFormInput("Name", nameController),
       TextFormInput("Amount", amountController),
       DateFormInput("Due date", dueDate, onDueDateChange),
       SelectFormInput("Frequency", ['monthly', 'bimonthly', 'weekly', 'biweekly'], dueFrequency, dueFrequencyChanged),
       SelectFormInput("Pay from", accountNames, accountsByPk[payFromAccountPk]?.name, payFromAccountChanged),
-    ];
+    ]);
   }
 
   @override
@@ -157,11 +166,11 @@ class EditBillPageState extends State<EditBillPage> {
       title: "${widget.bill.pk == null ? "Create" : "Edit"} Bill",
       keyFieldChangedHandler: widget.generateProjections.generateProjections,
       item: widget.bill,
-      createNew: widget.createNew,
+      createItem: widget.createNew,
       updateItem: widget.updateItem,
       deleteItem: widget.deleteItem,
       formToItem: formToBill,
-      generateUniqueInputs: generateUniqueInputs,
+      buildItemForm: buildItemForm,
     );
   }
 }

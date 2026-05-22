@@ -72,6 +72,11 @@ class IncomeRepository extends Repository<Income>{
     return joinedIncomeModels;
   }
 
+  Future<List<({int pk, String name})>> getAllNames() async { 
+    final idNameTuples = await dao.getAllNames();
+    return idNameTuples;
+  }
+
   @override
   Future<Income> saveChanges(Income itemWithChanges) async{
     IncomeRow row = domainToDataModel(itemWithChanges);

@@ -58,6 +58,15 @@ class EditAccountPageState extends State<EditAccountPage> {
     getAllAccounts();
   }
 
+  @override
+  void dispose() {
+    nameController.dispose();
+    balanceController.dispose();
+    creditLimitController.dispose();
+    creditInterestController.dispose();
+    super.dispose();
+  }
+
   void accountToForms(Account account){
     nameController = TextEditingController(text: account.name);
     balanceController = TextEditingController(text: currencyCentsToDollarsString(account.balance));
@@ -93,6 +102,8 @@ class EditAccountPageState extends State<EditAccountPage> {
     for(var account in accounts){
       newAccountsByPk[account.pk] = account;
     }
+
+    if (!mounted) return;
 
     setState((){
       allAccounts = accounts;
@@ -183,8 +194,8 @@ class EditAccountPageState extends State<EditAccountPage> {
     return accountsByPk[creditInterestPayFromAccountPk]?.name;
   }
 
-  List<Widget> generateUniqueInputs(){
-      List<Widget> inputs = [
+  Widget buildItemForm(){
+    List<Widget> inputs = [
       TextFormInput("Name", nameController),
       TextFormInput("Balance", balanceController),
       DateFormInput("Balance date", balanceDate, onBalanceDateChange),
@@ -200,7 +211,7 @@ class EditAccountPageState extends State<EditAccountPage> {
         SelectFormInput("Pay from", accountNames, getDefaultPayFromSelection(), payFromAccountChanged),
       ];
     }  
-    return inputs;
+    return Column(children: inputs);
   }
 
   @override
@@ -209,11 +220,11 @@ class EditAccountPageState extends State<EditAccountPage> {
       title: "${widget.account.pk == null ? "Create" : "Edit"} Account",
       keyFieldChangedHandler: widget.generateProjections.generateProjections,
       item: widget.account,
-      createNew: widget.createNew,
+      createItem: widget.createNew,
       updateItem: widget.updateItem,
       deleteItem: widget.deleteItem,
       formToItem: formToAccount,
-      generateUniqueInputs: generateUniqueInputs,
+      buildItemForm: buildItemForm,
     );
   }
 }

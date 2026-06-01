@@ -7,6 +7,7 @@ class Bill extends DomainModel<Bill>{
   final String name;
   final int amount;
   final DateTime? dueDate; 
+  final int? dueDateAnchorDay;
   final String dueFrequency;
   final int? payFromAccountPk;
   final Account? payFromAccount;
@@ -15,6 +16,7 @@ class Bill extends DomainModel<Bill>{
     required this.name, 
     required this.amount, 
     this.dueDate, 
+    this.dueDateAnchorDay,
     required this.dueFrequency, 
     this.payFromAccountPk,
     this.payFromAccount,
@@ -31,6 +33,7 @@ class Bill extends DomainModel<Bill>{
       name == other.name &&
       amount == other.amount &&
       dueDate == other.dueDate &&
+      dueDateAnchorDay == other.dueDateAnchorDay &&
       dueFrequency == other.dueFrequency &&
       payFromAccountPk == other.payFromAccountPk;
   }
@@ -50,6 +53,7 @@ class Bill extends DomainModel<Bill>{
     amount,
     dueDate,
     dueFrequency,
+    dueDateAnchorDay,
     payFromAccountPk,
   ]);
 
@@ -58,6 +62,7 @@ class Bill extends DomainModel<Bill>{
     String? name,
     int? amount,
     DateTime? dueDate,
+    int? dueDateAnchorDay,
     String? dueFrequency,
     int? payFromAccountPk}){
     return Bill(
@@ -65,6 +70,7 @@ class Bill extends DomainModel<Bill>{
       name: name ?? this.name, 
       amount: amount ?? this.amount, 
       dueDate: dueDate ?? this.dueDate, 
+      dueDateAnchorDay: dueDateAnchorDay ?? this.dueDateAnchorDay,
       dueFrequency: dueFrequency ?? this.dueFrequency, 
       payFromAccountPk: payFromAccountPk ?? this.payFromAccountPk);
   }
@@ -75,6 +81,7 @@ class Bill extends DomainModel<Bill>{
       name: name,
       amount: amount,
       dueDate: dueDate,
+      dueDateAnchorDay: dueDateAnchorDay,
       dueFrequency: dueFrequency,
       payFromAccountPk: payFromAccountPk,
       payFromAccount: payFromAccount,

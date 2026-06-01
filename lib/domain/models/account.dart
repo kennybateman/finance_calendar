@@ -11,6 +11,7 @@ class Account extends DomainModel<Account> {
   final int interest;
   final String dueFrequency;
   final DateTime? dueDate;
+  final int? dueDateAnchorDay;
   final int? payFromAccountPk;
   final Account? payFromAccount;
   final bool payFromThisAccount;
@@ -25,9 +26,11 @@ class Account extends DomainModel<Account> {
     this.interest = 0,
     this.dueFrequency = 'monthly',
     this.dueDate,
+    this.dueDateAnchorDay,
     this.payFromAccountPk,
     this.payFromAccount,
-  }) : payFromThisAccount = pk == payFromAccountPk; // the way this is coded 
+    this.payFromThisAccount = false,
+  }); // the way this is coded 
 
   @override
   bool operator ==(Object other){
@@ -45,6 +48,7 @@ class Account extends DomainModel<Account> {
       interest == other.interest &&
       dueFrequency == other.dueFrequency &&
       dueDate == other.dueDate &&
+      dueDateAnchorDay == other.dueDateAnchorDay &&
       payFromAccountPk == other.payFromAccountPk;
   }
 
@@ -59,6 +63,7 @@ class Account extends DomainModel<Account> {
     interest,
     dueFrequency,
     dueDate,
+    dueDateAnchorDay,
     payFromAccountPk
   ]);
 
@@ -72,6 +77,7 @@ class Account extends DomainModel<Account> {
     int? interest,
     String? dueFrequency,
     DateTime? dueDate,
+    int? dueDateAnchorDay,
     int? payFromAccountPk,
     bool? payFromThisAccount}){
     return Account(
@@ -84,6 +90,7 @@ class Account extends DomainModel<Account> {
       interest: interest ?? this.interest,
       dueFrequency: dueFrequency ?? this.dueFrequency,
       dueDate: dueDate ?? this.dueDate,
+      dueDateAnchorDay: dueDateAnchorDay ?? this.dueDateAnchorDay,
       payFromAccountPk: payFromAccountPk ?? this.payFromAccountPk,
     );  
   }
@@ -97,6 +104,7 @@ class Account extends DomainModel<Account> {
     interest != other.interest ||
     dueFrequency != other.dueFrequency ||
     dueDate == other.dueDate ||
+    dueDateAnchorDay == other.dueDateAnchorDay ||
     payFromAccountPk != other.payFromAccountPk;  
   }
 
@@ -111,6 +119,7 @@ class Account extends DomainModel<Account> {
       interest: interest,
       dueFrequency: dueFrequency,
       dueDate: dueDate,
+      dueDateAnchorDay: dueDateAnchorDay,
       payFromAccountPk: payFromAccountPk,
       payFromAccount: payFromAccount,
     );

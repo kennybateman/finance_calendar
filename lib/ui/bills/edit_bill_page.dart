@@ -120,6 +120,7 @@ class EditBillPageState extends State<EditBillPage> {
       dueFrequency: dueFrequency,
       payFromAccountPk: payFromAccountPk,
       dueDate: dueDate,
+    dueDateAnchorDay: dueDate?.day,
     );
   }
 

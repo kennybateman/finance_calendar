@@ -1,3 +1,5 @@
+import 'package:flutter_test/flutter_test.dart';
+
 import 'package:finance_calendar/data/services/database_wrapper.dart';
 import 'package:finance_calendar/data/services/database_schema.dart';
 import 'package:finance_calendar/data/services/database_factory.dart';
@@ -5,7 +7,7 @@ import 'package:finance_calendar/data/services/database_factory.dart';
 import 'package:finance_calendar/data/repositories/accounts_repository.dart';
 import 'package:finance_calendar/domain/models/account.dart';
 
-import 'package:flutter_test/flutter_test.dart';
+import 'package:finance_calendar/domain/use_cases/helpers.dart';
 
 void main() {
   late DatabaseWrapper dbWrapper;
@@ -46,8 +48,8 @@ void main() {
     expect(all.length,  1);
     expect(all.first.balance, 0);
 
-    // How does the direct comparison work? And could I set up one. Should I? Nah.
-    expect(all.first, isNot(savedAccount));
+    /* model instances should be able to be compared directly */
+    expect(all.first, savedAccount);
 
     var changedAccount = savedAccount.updateValue(name: 'Mother fucking account');
     var savedChangedAccount = await repo.saveChanges(changedAccount);
@@ -59,8 +61,8 @@ void main() {
   });
 
   test('Verify the date type conversion into the database and back', () async {
-    var account = Account(name: "a", balance: 1000, balanceDate: DateTime.now(), accountType: 'debit', );
+    var account = Account(name: "a", balance: 1000, balanceDate: toDate(DateTime.now()), accountType: 'debit', );
     var savedChangedAccount = await repo.createNew(account);
-    expect(savedChangedAccount.balanceDate, DateTime.now());
+    expect(savedChangedAccount.balanceDate, toDate(DateTime.now()));
   });
 }

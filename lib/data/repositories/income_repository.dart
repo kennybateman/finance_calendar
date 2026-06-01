@@ -26,6 +26,7 @@ class IncomeRepository extends Repository<Income>{
       amount: row.amount,
       dueFrequency: row.due_frequency,
       dueDate: stringToDate(row.due_date),
+      dueDateAnchorDay: row.due_date_anchor_day,
       payToAccountPk: row.pay_to_account_pk,
     );
   }
@@ -36,6 +37,7 @@ class IncomeRepository extends Repository<Income>{
       amount: entity.amount,
       due_frequency: entity.dueFrequency,
       due_date: dateToStringForDB(entity.dueDate),
+      due_date_anchor_day: entity.dueDateAnchorDay,
       pay_to_account_pk: entity.payToAccountPk,
     );
   }

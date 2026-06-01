@@ -1,6 +1,5 @@
 // Data
 import 'package:collection/collection.dart';
-import 'package:finance_calendar/domain/models/abstract_domain_model.dart';
 import 'package:finance_calendar/domain/use_cases/helpers.dart';
 
 import '../../data/repositories/projections_repository.dart';
@@ -12,14 +11,19 @@ import 'package:finance_calendar/domain/models/account.dart';
 import 'package:finance_calendar/domain/models/bill.dart';
 import 'package:finance_calendar/domain/models/income.dart';
 import 'package:finance_calendar/domain/models/projection.dart';
-import 'dart:developer' as developer;
+// import 'dart:developer' as developer;
 
 class GenerateProjectionsUseCase {
   final AccountsRepository accountsRepo;
   final BillsRepository billsRepo;
   final IncomeRepository incomeRepo;
   final ProjectionsRepository projectionsRepo;
-  GenerateProjectionsUseCase(this.accountsRepo, this.billsRepo, this.incomeRepo, this.projectionsRepo);
+  GenerateProjectionsUseCase(
+    this.accountsRepo, 
+    this.billsRepo, 
+    this.incomeRepo, 
+    this.projectionsRepo
+  );
 
   late List<Account> allAccounts;
   late Map<int?, Account?> accountsByPk;
@@ -28,9 +32,14 @@ class GenerateProjectionsUseCase {
 
   late DateTime earliestAccountReportDate;
 
+  /*
+    Once we are sure we can run the new projections algorithm, clear the old one.
+    Hopefully anything that might break the algorithm will have been caught by validateRecords.
+  */
   Future<void> clearProjections() async {
     await projectionsRepo.clearAllProjectionTables();
   }
+
 
   /*
     This must validate that every related record has the minimal amount of information to generate the projections.
@@ -44,65 +53,52 @@ class GenerateProjectionsUseCase {
       if (account.balanceDate == null) throw GenerateProjectionsException("Account: ${account.name} is missing balance date.");
       if (account.accountType == 'credit'){
         if (account.accountType == 'credit' && account.dueDate == null) throw GenerateProjectionsException("Credit account: ${account.name} is missing interest due date.");
+        if (account.accountType == 'credit' && account.dueDateAnchorDay == null) throw GenerateProjectionsException("Credit account: ${account.name} is missing interest due date anchor day");
         if (account.accountType == 'credit' && account.payFromAccountPk == null) throw GenerateProjectionsException("Credit account: ${account.name} is missing interest pay from account.");
       }
     }
     for(var i = 0; i < allBills.length; i++){
       Bill bill = allBills[i];
       if (bill.dueDate == null) throw GenerateProjectionsException("Bill: ${bill.name} is missing due date.");
+      if (bill.dueDateAnchorDay == null) throw GenerateProjectionsException("Bill: ${bill.name} is missing interest due date anchor day");
       if (bill.payFromAccountPk == null) throw GenerateProjectionsException("Bill: ${bill.name} is missing pay from account.");
     }
     for(var i = 0; i < allIncome.length; i++){
       Income income = allIncome[i];
       if (income.dueDate == null) throw GenerateProjectionsException("Income: ${income.name} is missing due date.");
+      if (income.dueDateAnchorDay == null) throw GenerateProjectionsException("Income: ${income.name} is missing due date anchor day.");
       if (income.amount == 0) throw GenerateProjectionsException("Income: ${income.name} is missing amount.");
       if (income.payToAccountPk == null) throw GenerateProjectionsException("Income: ${income.name} is missing pay from account.");
     }
   }
 
-  void joinRecords(){
-    accountsByPk = mapByPk(allAccounts);
-    for(var i = 0; i < allAccounts.length; i++){
-      Account account = allAccounts[i];
-      if (account.accountType == 'credit'){
-        allAccounts[i] = account = account.joinPayFromAccount(accountsByPk[account.payFromAccountPk]);
-      }
-    }  
-    for(var i = 0; i < allBills.length; i++){
-      Bill bill = allBills[i];
-      allBills[i] = bill.joinPayFromAccount(accountsByPk[bill.payFromAccountPk]);
-    }
-    for(var i = 0; i < allIncome.length; i++){
-      Income income = allIncome[i];
-      allIncome[i] = income.joinPayToAccount(accountsByPk[income.payToAccountPk]);
-    }
-  }
-
   /* 
-    Actually, this should prevent phantom transactions, since we always catch up dueDates to the first one after
-    their handling account's report date.
+    Never change anchor day, just the dueDate.
   */
   Future<void> catchUpDueDates() async {
     bool reloadItems = false;
+
     List<Account> updatedAccounts = [];
     for(var account in allAccounts){
-      if (account.accountType == 'credit'){
-        var dueDate = account.dueDate!;
-        final balanceDate = account.payFromAccount!.balanceDate!;
+      if (account.accountType != 'credit') continue;
 
-        var limit = 365;
-        while(dueDate.isBefore(balanceDate)){
-          limit--;
-          if (limit < 0) throw Exception("Credit account: ${account.name} interest dueDate too far before pay from account balance date");
+      var dueDate = account.dueDate!;
+      var dueDateAnchorDay = account.dueDateAnchorDay!;
+      final balanceDate = account.payFromAccount!.balanceDate!;
 
-          dueDate = findNextDueDate(dueDate, account.dueFrequency);
-        }
-        // Save the new due date to the model (not the DB)
-        if (account.dueDate != dueDate){
-          updatedAccounts.add(account.updateValue(dueDate: dueDate));
-        }
+      var limit = 365;
+      while(dueDate.isBefore(balanceDate)){
+        limit--;
+        if (limit < 0) throw Exception("Credit account: ${account.name} interest dueDate too far before pay from account balance date");
+
+        dueDate = findNextDueDate(dueDate, account.dueFrequency, dueDateAnchorDay);
+      }
+      // Save the new due date to the model (not the DB)
+      if (account.dueDate != dueDate){
+        updatedAccounts.add(account.updateValue(dueDate: dueDate));
       }
     }
+    
     if (updatedAccounts.isNotEmpty){
       reloadItems = true;
       for(var account in updatedAccounts){
@@ -110,9 +106,13 @@ class GenerateProjectionsUseCase {
       }
     }
 
+
+
+
     List<Bill> updatedBills = [];
     for(var bill in allBills){
       var dueDate = bill.dueDate!;
+      var dueDateAnchorDay = bill.dueDateAnchorDay!;
       final balanceDate = bill.payFromAccount!.balanceDate!;
 
       var limit = 365;
@@ -120,7 +120,7 @@ class GenerateProjectionsUseCase {
         limit--;
         if (limit < 0) throw Exception("Bill: ${bill.name} dueDate too far before pay from account balance date");
 
-        dueDate = findNextDueDate(dueDate, bill.dueFrequency);
+        dueDate = findNextDueDate(dueDate, bill.dueFrequency, dueDateAnchorDay);
       }
       // Save the new date to the model (not the DB)
       if (bill.dueDate != dueDate){
@@ -137,6 +137,7 @@ class GenerateProjectionsUseCase {
     List<Income> updatedIncome = [];
     for(var income in allIncome){
       var dueDate = income.dueDate!;
+      var dueDateAnchorDay = income.dueDateAnchorDay!;
       final balanceDate = income.payToAccount!.balanceDate!;
 
       var limit = 365;
@@ -144,7 +145,7 @@ class GenerateProjectionsUseCase {
         limit--;
         if (limit < 0) throw Exception("Income: ${income.name} dueDate too far before pay to account balance date");
 
-        dueDate = findNextDueDate(dueDate, income.dueFrequency);
+        dueDate = findNextDueDate(dueDate, income.dueFrequency, dueDateAnchorDay);
       }
       // Save the new date to the model (not the DB)
       if (income.dueDate != dueDate){
@@ -164,14 +165,14 @@ class GenerateProjectionsUseCase {
   }
 
 
-  DateTime findNextDueDate(DateTime dueDate, String frequency){
+  DateTime findNextDueDate(DateTime dueDate, String frequency, int anchorDay){
     switch(frequency){
       case "weekly":
         return dueDate.add(Duration(days: 7));
       case "biweekly":
         return dueDate.add(Duration(days: 14));
       case "monthly":
-        return DateTime(dueDate.year, dueDate.month + 1, dueDate.day);
+        return sameDayNextMonth(dueDate, anchorDay);
       default:
         throw Exception("unknown frequncy $frequency");
     }
@@ -189,9 +190,7 @@ class GenerateProjectionsUseCase {
   }
 
   Future<void> generateProjections() async {
-    developer.log("wooooooh!");
     await loadAndValidateAllRecords();
-    joinRecords();
     await catchUpDueDates();
 
     /* just before proceeding, clear the projections table */
@@ -234,7 +233,7 @@ class GenerateProjectionsUseCase {
               newBalance -= billAmount;
             }
 
-            allAccounts[i] = creditAccount.updateValue(dueDate: findNextDueDate(creditAccount.dueDate!, creditAccount.dueFrequency));
+            allAccounts[i] = creditAccount.updateValue(dueDate: findNextDueDate(creditAccount.dueDate!, creditAccount.dueFrequency, creditAccount.dueDateAnchorDay!));
 
             projectionForDay.addBillProjection(BillProjection(creditAccountPk: creditAccount.pk, projectedAmount: billAmount));
           }
@@ -251,7 +250,7 @@ class GenerateProjectionsUseCase {
               newBalance -= bill.amount;
             }
 
-            allBills[i] = bill.updateValue(dueDate: findNextDueDate(bill.dueDate!, bill.dueFrequency));
+            allBills[i] = bill.updateValue(dueDate: findNextDueDate(bill.dueDate!, bill.dueFrequency, bill.dueDateAnchorDay!));
 
             projectionForDay.addBillProjection(BillProjection(billPk: bill.pk!, projectedAmount: bill.amount));
           }
@@ -268,7 +267,7 @@ class GenerateProjectionsUseCase {
               newBalance += income.amount;
             }
 
-            allIncome[i] = income.updateValue(dueDate: findNextDueDate(income.dueDate!, income.dueFrequency));
+            allIncome[i] = income.updateValue(dueDate: findNextDueDate(income.dueDate!, income.dueFrequency, income.dueDateAnchorDay!));
 
             projectionForDay.addIncomeProjection(IncomeProjection(incomePk: income.pk!, projectedAmount: income.amount));
           }
@@ -285,8 +284,6 @@ class GenerateProjectionsUseCase {
       /* iterate to next day */
       projectionDate = projectionDate.add(const Duration(days: 1));
     }
-
-    developer.log("DONE RUNNING THE ALGORITHM!");
   }
 }
 

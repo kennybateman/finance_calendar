@@ -6,6 +6,7 @@ class BillsRow implements DatabaseRow {
   final String name;
   final int amount;
   final String? due_date;
+  final int? due_date_anchor_day;
   final String due_frequency;
   final int? pay_from_account_pk;
   
@@ -14,6 +15,7 @@ class BillsRow implements DatabaseRow {
     required this.name,
     required this.amount,
     required this.due_date,
+    required this.due_date_anchor_day,
     required this.due_frequency,
     this.pay_from_account_pk,
   });
@@ -24,6 +26,7 @@ class BillsRow implements DatabaseRow {
       name: map['name'] as String,
       amount: map['amount'] as int,
       due_date: map['due_date'] as String?,
+      due_date_anchor_day: map['due_date_anchor_day'] as int?,
       due_frequency: map['due_frequency'] as String,
       pay_from_account_pk: map['pay_from_account_pk'] as int?,
     );
@@ -35,6 +38,7 @@ class BillsRow implements DatabaseRow {
       'name': row.name,
       'amount': row.amount,
       'due_date': row.due_date,
+      'due_date_anchor_day': row.due_date_anchor_day,
       'due_frequency': row.due_frequency,
       'pay_from_account_pk': row.pay_from_account_pk,
     };

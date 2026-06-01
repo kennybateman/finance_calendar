@@ -136,6 +136,7 @@ class EditAccountPageState extends State<EditAccountPage> {
       interest: dollarsStringToCurrencyCents(creditInterestController.text),
       dueFrequency: creditInterestDueFrequency,
       dueDate: creditInterestDueDate,
+      dueDateAnchorDay: creditInterestDueDate?.day,
       payFromAccountPk: creditInterestPayFromAccountPk,
     );
   }

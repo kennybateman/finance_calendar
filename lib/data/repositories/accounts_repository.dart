@@ -25,6 +25,7 @@ class AccountsRepository implements Repository<Account>{
       interest: row.interest ?? 0,
       dueFrequency: row.due_frequency ?? 'monthly',
       dueDate: stringToDate(row.due_date),
+      dueDateAnchorDay: row.due_date_anchor_day,
       payFromAccountPk: row.pay_from_account_pk,
     );
   }
@@ -40,6 +41,7 @@ class AccountsRepository implements Repository<Account>{
       interest: entity.interest,
       due_frequency: entity.dueFrequency,
       due_date: dateToStringForDB(entity.dueDate),
+      due_date_anchor_day: entity.dueDateAnchorDay,
       pay_from_account_pk: entity.payFromAccountPk,
     );
   }

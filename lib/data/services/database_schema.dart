@@ -20,6 +20,7 @@ class DatabaseSchema {
         credit_limit  INTEGER,
         interest      INTEGER,
         due_date      TEXT,
+        due_date_anchor_day INTEGER,
         due_frequency TEXT CHECK(due_frequency IN ('monthly', 'bimonthly', 'weekly', 'biweekly')),  
         pay_from_account_pk INTEGER,
         FOREIGN KEY (pay_from_account_pk) REFERENCES accounts (pk)
@@ -32,6 +33,7 @@ class DatabaseSchema {
         name          TEXT    NOT NULL UNIQUE,
         amount        INTEGER NOT NULL,
         due_date      TEXT,
+        due_date_anchor_day INTEGER,
         due_frequency TEXT    NOT NULL CHECK(due_frequency IN ('monthly', 'bimonthly', 'weekly', 'biweekly')),
         pay_from_account_pk INTEGER,
         FOREIGN KEY (pay_from_account_pk) REFERENCES accounts (pk)
@@ -47,6 +49,7 @@ class DatabaseSchema {
         name      TEXT     NOT NULL UNIQUE,
         amount    INTEGER  NOT NULL,
         due_date  TEXT,
+        due_date_anchor_day INTEGER,
         due_frequency TEXT NOT NULL CHECK(due_frequency IN ('monthly', 'bimonthly', 'weekly', 'biweekly')),
         pay_to_account_pk INTEGER,
         FOREIGN KEY (pay_to_account_pk) REFERENCES accounts (pk)
@@ -106,7 +109,11 @@ class DatabaseSchema {
 
   Future onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
-
+      await db.execute('''
+        ALTER TABLE bills ADD COLUMN due_date_anchor_day INTEGER;
+        ALTER TABLE income ADD COLUMN due_date_anchor_day INTEGER;
+        ALTER TABLE accounts ADD COLUMN due_date_anchor_day INTEGER;
+      ''');
     }
 
     if (oldVersion < 3) {

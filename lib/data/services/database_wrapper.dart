@@ -43,7 +43,7 @@ class DatabaseWrapper {
     _database = await dbFactory.openDatabase(
       path,
       options: OpenDatabaseOptions(
-        version: 1,
+        version: 2,
         onCreate: schema.createDB,
         onUpgrade: schema.onUpgrade,
       ),

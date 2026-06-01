@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 // DOMAIN
 import '../../domain/models/projection_read_only.dart';
 
-class ProjectionDetailPage extends StatefulWidget{
+class ProjectionDetailPage extends StatefulWidget {
   final ProjectionReadModel projection;
   const ProjectionDetailPage({super.key, required this.projection});
 

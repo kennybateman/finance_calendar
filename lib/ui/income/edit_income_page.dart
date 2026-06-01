@@ -114,6 +114,7 @@ class EditIncomePageState extends State<EditIncomePage> {
       dueFrequency: dueFrequency,
       payToAccountPk: payToAccountPk,
       dueDate: dueDate,
+      dueDateAnchorDay: dueDate?.day,
     );
   }
 

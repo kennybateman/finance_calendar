@@ -7,6 +7,7 @@ class Income extends DomainModel<Income> {
   final String name;
   final int amount;
   final DateTime? dueDate;
+  final int? dueDateAnchorDay;
   final String dueFrequency;
   final int? payToAccountPk;
   final Account? payToAccount;
@@ -14,7 +15,8 @@ class Income extends DomainModel<Income> {
   Income({ this.pk, 
     required this.name, 
     required this.amount, 
-    required this.dueDate, 
+    this.dueDate,
+    this.dueDateAnchorDay,
     required this.dueFrequency, 
     required this.payToAccountPk,
     this.payToAccount
@@ -25,6 +27,7 @@ class Income extends DomainModel<Income> {
     return amount != other.amount ||
     dueDate != other.dueDate ||
     dueFrequency != other.dueFrequency ||
+    dueDateAnchorDay == other.dueDateAnchorDay ||
     payToAccountPk != other.payToAccountPk;  
   }
 
@@ -40,6 +43,7 @@ class Income extends DomainModel<Income> {
       amount == other.amount &&
       dueDate == other.dueDate &&
       dueFrequency == other.dueFrequency &&
+      dueDateAnchorDay == other.dueDateAnchorDay &&
       payToAccountPk == other.payToAccountPk;
   }
 
@@ -50,6 +54,7 @@ class Income extends DomainModel<Income> {
     amount,
     dueDate,
     dueFrequency,
+    dueDateAnchorDay,
     payToAccountPk,
   ]);
 
@@ -58,6 +63,7 @@ class Income extends DomainModel<Income> {
     String? name,
     int? amount,
     DateTime? dueDate,
+    int? dueDateAnchorDay,
     String? dueFrequency,
     int? payToAccountPk}){
     return Income(
@@ -65,6 +71,7 @@ class Income extends DomainModel<Income> {
       name: name ?? this.name, 
       amount: amount ?? this.amount, 
       dueDate: dueDate ?? this.dueDate, 
+      dueDateAnchorDay: dueDateAnchorDay ?? this.dueDateAnchorDay,
       dueFrequency: dueFrequency ?? this.dueFrequency, 
       payToAccountPk: payToAccountPk ?? this.payToAccountPk);
   }
@@ -75,6 +82,7 @@ class Income extends DomainModel<Income> {
       name: name,
       amount: amount,
       dueDate: dueDate,
+      dueDateAnchorDay: dueDateAnchorDay,
       dueFrequency: dueFrequency,
       payToAccountPk: payToAccountPk,
       payToAccount: payToAccount

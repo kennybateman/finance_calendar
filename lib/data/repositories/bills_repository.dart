@@ -25,6 +25,7 @@ class BillsRepository extends Repository<Bill>{
       amount: row.amount,
       dueFrequency: row.due_frequency,
       dueDate: stringToDate(row.due_date),
+      dueDateAnchorDay: row.due_date_anchor_day,
       payFromAccountPk: row.pay_from_account_pk,
     );
   }
@@ -35,6 +36,7 @@ class BillsRepository extends Repository<Bill>{
       amount: entity.amount,
       due_frequency: entity.dueFrequency,
       due_date: dateToStringForDB(entity.dueDate),
+      due_date_anchor_day: entity.dueDateAnchorDay,
       pay_from_account_pk: entity.payFromAccountPk,
     );
   }

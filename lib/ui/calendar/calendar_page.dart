@@ -85,7 +85,7 @@ class CalendarPageState extends State<CalendarPage> {
 
   /* If day in calendar has events, mark it with a graphic */
   List<String> eventLoader(DateTime day) {
-    return projectionsForMonthByDate[dateToStringForDB(day)]?.transactionStrings ?? [];
+    return projectionsForMonthByDate[dateToStringForDB(day)]?.transactionProjectionStrings() ?? [];
   }
 
   @override

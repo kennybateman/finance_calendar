@@ -41,8 +41,6 @@ class ProjectionsPage extends StatelessWidget {
     }
 
     return CrudListPage<ProjectionReadModel>(
-      preloadHook: generateProjections.generateProjections,
-      preloadHookFailHandler: generateProjections.clearProjections,
       getAll: tryGetAllReadModels,
       buildTileWidget: toTileWidget,
       useAddButton: false,

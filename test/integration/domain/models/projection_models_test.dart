@@ -77,13 +77,13 @@ void main() async {
       // ^expect no exception from the method above
 
       var readOnlyModels = await projectionsRepo.getAllReadModels();
-      expect(readOnlyModels.first.accountProjectionStrings.length, 1);
-      expect(readOnlyModels.first.accountProjectionStrings.first.$2, "some account: \$1010.00");
+      expect(readOnlyModels.first.accountProjectionStrings().length, 1);
+      expect(readOnlyModels.first.accountProjectionStrings().first, "some account: \$1010.00");
 
-      expect(readOnlyModels.first.transactionProjectionStrings.length, 3);
-      expect(readOnlyModels.first.transactionProjectionStrings[0].$3, "some bill: \$10.00");
-      expect(readOnlyModels.first.transactionProjectionStrings[2].$3, "some income: \$500.00");
-      expect(readOnlyModels.first.transactionProjectionStrings[1].$3, "some credit account interest: \$33.00");
+      expect(readOnlyModels.first.transactionProjectionStrings().length, 3);
+      expect(readOnlyModels.first.transactionProjectionStrings()[0], "some bill: \$10.00");
+      expect(readOnlyModels.first.transactionProjectionStrings()[2], "some income: \$500.00");
+      expect(readOnlyModels.first.transactionProjectionStrings()[1], "some credit account interest: \$33.00");
     });
   });
 }

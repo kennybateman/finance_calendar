@@ -18,8 +18,8 @@ class ProjectionDetailPageState extends State<ProjectionDetailPage> {
 
     List<Widget> all = [
       Text(widget.projection.dateString),
-      for (var balanceString in widget.projection.balanceStrings) Text(balanceString),
-      for (var transactionString in widget.projection.transactionStrings) Text(transactionString),
+      for (var balanceString in widget.projection.accountProjectionStrings()) Text(balanceString),
+      for (var transactionString in widget.projection.transactionProjectionStrings()) Text(transactionString),
     ];
 
     return Scaffold(

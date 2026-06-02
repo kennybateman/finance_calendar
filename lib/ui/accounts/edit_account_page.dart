@@ -115,6 +115,11 @@ class EditAccountPageState extends State<EditAccountPage> {
   void validateInput(){
     /* Database doesn't allow same names. Don't rely on that though. Catch it here */
     final newName = nameController.text;
+
+    if (newName == "") {
+      throw EditException("Name cannot be empty.");
+    }
+
     for(var account in allAccounts){
       /* allAccounts all have pks, widget.account might not, either way, we are allowed to change the name */
       if (account.pk == widget.account.pk) continue;

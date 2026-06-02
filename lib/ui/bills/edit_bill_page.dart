@@ -102,6 +102,11 @@ class EditBillPageState extends State<EditBillPage> {
   void validateInput() {
     /* Database doesn't allow same names. Don't rely on that though. Catch it here */
     final newName = nameController.text;
+
+    if (newName == "") {
+      throw EditException("Name cannot be empty.");
+    }
+
     for(var bill in allBills){
       /* allBills all have pks, widget.bill might not, either way, we are allowed to change the name */
       if (bill.pk == widget.bill.pk) continue;

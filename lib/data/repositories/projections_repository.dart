@@ -235,48 +235,53 @@ class ProjectionsRepository implements Repository<Projection> {
 
     /* get all info from accounts and their projections */
     var accountsRowsByPk = accountsRows.mapByPk();
-    List<(int accountId, String projectionString)> accountProjectionStrings = [];
-    for (var accountProjection in accountProjectionsRows){
-      var accountsRow = accountsRowsByPk[accountProjection.account_pk];
-      if (accountsRow == null) continue;
+    List<String> accountNames = [];
+    List<int> accountBalances = [];
+    for (final accountProjection in accountProjectionsRows){
+      final accountName = accountsRowsByPk[accountProjection.account_pk]!.name;
+      accountNames.add(accountName);
 
-      var accountName = accountsRowsByPk[accountProjection.account_pk]!.name;
-      var projectedAmount = currencyCentsToDollarsString(accountProjection.projected_balance);
-      accountProjectionStrings.add((accountsRow.pk!, "$accountName: \$$projectedAmount"));
+      final projectedAmount = accountProjection.projected_balance;
+      accountBalances.add(projectedAmount);
     }
 
     /* get all info from transactions, and their projections */
     var billsRowsByPk = billsRows.mapByPk();
     var incomeRowsByPk = incomeRows.mapByPk();
-    List<(int, String, String)> transactionProjectionStrings = [];
+    List<String> transactionNames = [];
+    List<int> transactionAmounts = [];
     for (var transactionProjection in transactionProjectionsRows){
       if (transactionProjection.bill_pk != null){
-        var billsRow = billsRowsByPk[transactionProjection.bill_pk];
-        var billName = billsRow!.name;
-        var billAmount = currencyCentsToDollarsString(transactionProjection.projected_amount);
-        transactionProjectionStrings.add((billsRow.pk!, 'bill', "$billName: \$$billAmount"));
+        final billName = billsRowsByPk[transactionProjection.bill_pk]!.name;
+        transactionNames.add(billName);
+
+        final projectedAmount = transactionProjection.projected_amount;
+        transactionAmounts.add(projectedAmount);
       }
 
       else if (transactionProjection.income_pk != null){
-        var incomeRow = incomeRowsByPk[transactionProjection.income_pk];
-        var incomeName = incomeRow!.name;
-        var incomeAmount = currencyCentsToDollarsString(transactionProjection.projected_amount);
-        transactionProjectionStrings.add((incomeRow.pk!, 'income', "$incomeName: \$$incomeAmount"));
+        final incomeName = incomeRowsByPk[transactionProjection.income_pk]!.name;
+        transactionNames.add(incomeName);
+
+        final projectedAmount = transactionProjection.projected_amount;
+        transactionAmounts.add(projectedAmount);
       }
       
       else if (transactionProjection.account_pk != null){
-        var creditAccount = accountsRowsByPk[transactionProjection.account_pk]!;
-        var name = "${creditAccount.name} interest";
-        var interestAmount = currencyCentsToDollarsString(transactionProjection.projected_amount);
-        transactionProjectionStrings.add((creditAccount.pk!, 'interest', "$name: \$$interestAmount"));       
+        final interestName = "${accountsRowsByPk[transactionProjection.account_pk]!.name} interest";
+        transactionNames.add(interestName);
+        final interestAmount = transactionProjection.projected_amount;
+        transactionAmounts.add(interestAmount);
       }
     }
 
     return ProjectionReadModel(
       pk: projectionsRow.pk!,
       date: stringToDate(projectionsRow.date)!,
-      accountProjectionStrings: accountProjectionStrings,
-      transactionProjectionStrings: transactionProjectionStrings,
+      accountNames: accountNames,
+      accountBalances: accountBalances,
+      transactionNames: transactionNames,
+      transactionAmounts: transactionAmounts,
     );
   }
 

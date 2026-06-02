@@ -12,6 +12,7 @@ import '../data/repositories/bills_repository.dart';
 import '../data/repositories/settings_repository.dart';
 // DOMAIN
 import '../domain/use_cases/generate_projections.dart';
+import '../domain/use_cases/export_projections.dart';
 import '../domain/models/settings.dart';
 import '../../domain/use_cases/backup.dart';
 // UI
@@ -39,6 +40,7 @@ class FinanceCalendarViewModel extends ChangeNotifier {
   late DefaultTabController homeBody;
   late Widget loading;
   late GenerateProjectionsUseCase generateProjections;
+  late ExportProjections exportProjections;
 
   FinanceCalendarViewModel(
     DatabaseWrapper databaseWrapper, 
@@ -62,6 +64,8 @@ class FinanceCalendarViewModel extends ChangeNotifier {
     themeData = ThemeData(colorScheme: .fromSeed(seedColor: Colors.purple, brightness: darkMode ? Brightness.dark : Brightness.light));
 
     generateProjections = GenerateProjectionsUseCase(accountRepo, billRepo, incomeRepo, projectionsRepo);
+
+    exportProjections = ExportProjections(projectionsRepo);
 
     backup = Backup(accountRepo, billRepo, incomeRepo);
 
@@ -120,6 +124,8 @@ class FinanceCalendarViewModel extends ChangeNotifier {
             feedbackHandler: feedbackHandler,
             backupDataToExcel: backup.backupDataToExcel,
             unpackDataFromExcel: backup.unpackDataFromExcel,
+            exportProjectionToExcel: exportProjections.backupDataToExcel,
+            checkIfExcelCanExport: generateProjections.loadAndValidateAllRecords,
             informationPage: InformationPage(),
           ),
         ]),

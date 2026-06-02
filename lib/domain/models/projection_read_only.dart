@@ -13,18 +13,18 @@ class ProjectionReadModel extends DomainModel<ProjectionReadModel>{
   @override 
   final int pk;
   final DateTime date;
-  
-  // This needs to aggregate information form AccountProjection and Account
-  // I kind of want to keep an id for each so I can at least reference it for
-  // links or something. Do I really need to though? Just for accounts.
-  // thus save the account id not the account projections id
-  final List<(int id, String info)> accountProjectionStrings;
-  final List<(int id, String type, String info)> transactionProjectionStrings;
+  final List<String> accountNames;
+  final List<int> accountBalances;
+  final List<String> transactionNames;
+  final List<int> transactionAmounts;
+
   ProjectionReadModel({
     required this.pk, 
     required this.date, 
-    required this.accountProjectionStrings,
-    required this.transactionProjectionStrings,
+    required this.accountNames,
+    required this.accountBalances,
+    required this.transactionNames,
+    required this.transactionAmounts,
   });
 
   @override
@@ -32,14 +32,37 @@ class ProjectionReadModel extends DomainModel<ProjectionReadModel>{
     return "$dateString - $balancesString - $transactionsString";
   }
 
+  int get numberOfAccounts => accountNames.length;
+
+  int get numberOfTransactions => transactionNames.length;
+
+  List<String> accountProjectionStrings(){
+    List<String> accountProjectionStrings = [];
+    for(int i=0; i < numberOfAccounts; i++){
+      final accountName = accountNames[i];
+      final balance = currencyCentsToDollarsString(accountBalances[i]);
+      accountProjectionStrings.add("$accountName: \$$balance");
+    }
+    return accountProjectionStrings;
+  }
+
+  List<String> transactionProjectionStrings(){
+    List<String> transactionProjectionStrings = [];
+    for(int i=0; i < numberOfTransactions; i++){
+      final name = transactionNames[i];
+      final amount = currencyCentsToDollarsString(transactionAmounts[i]);
+      transactionProjectionStrings.add("$name: \$$amount");
+    }
+    return transactionProjectionStrings;
+  }
+
   String get dateString => "${dateToStringForDisplay(date)}";
-  List<String> get balanceStrings => accountProjectionStrings.map((ap) => ap.$2).toList();
-  String get balancesString => balanceStrings.join(", ");
-  List<String> get transactionStrings => transactionProjectionStrings.map((ap) => ap.$3).toList();
-  String get transactionsString => transactionStrings.join(", ");
+  String get balancesString => accountProjectionStrings().join(", ");
+  String get transactionsString => transactionProjectionStrings().join(", ");
+  
 
   bool anyTransactions(){ 
-    return transactionProjectionStrings.isNotEmpty;
+    return numberOfTransactions > 0;
   }
 
   @override

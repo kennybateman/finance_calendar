@@ -1,18 +1,15 @@
-# Ignore everything
-*
+.dart_tool/
+.idea/
+.vscode/
+android/
+build/
+ios/
+linux/
+macos/
+web/
+windows/
+.flutter-plugins-dependencies
 
-# Allow just the directories with work, ignore generated stuff
-!graphics/
-!lib/
-!lib/ui
-!lib/data
-!lib/domain
-!test/
+flutter_*.log
+pubspec.lock
 
-# Allow specific root files
-!README.md
-!.gitignore
-!package.json
-!pubspec.yaml
-!analysis_options.yaml
-!finance_calendar.iml

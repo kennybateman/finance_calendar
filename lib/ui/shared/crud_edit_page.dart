@@ -1,4 +1,5 @@
 // Dart and Flutter
+import 'package:finance_calendar/domain/use_cases/generate_projections.dart';
 import 'package:flutter/material.dart';
 // DOMAIN
 import 'package:finance_calendar/domain/models/abstract_domain_model.dart';
@@ -62,25 +63,16 @@ class CrudEditPageState<T extends DomainModel<T>> extends State<CrudEditPage<T>>
 
   void create() async {
     executeCrud(() async {
-      final created = widget.formToItem(); // does validation
+      final created = widget.formToItem();
       final _ = await widget.createItem(created);
-
-      await widget.keyFieldChangedHandler();
     });
   }
 
   void update() async {
     executeCrud(() async {
-      final updated = widget.formToItem(); // does validation
-      
-      /* only update if detectable changes */
+      final updated = widget.formToItem();
       if (updated != widget.item){
         final _ = await widget.updateItem(updated);
-      }
-
-      /* only if specific fields changed, then run the handler */
-      if (widget.item.keyFieldsChanged(updated)){
-        await widget.keyFieldChangedHandler();
       }
     });
   }
@@ -94,8 +86,6 @@ class CrudEditPageState<T extends DomainModel<T>> extends State<CrudEditPage<T>>
   Future<void> executeCrud(Future<void> Function() action) async {
     try {
       await action();
-
-      if (mounted) Navigator.pop(context);
     }
     on EditException catch(e) {
       if (!mounted) return;
@@ -111,6 +101,18 @@ class CrudEditPageState<T extends DomainModel<T>> extends State<CrudEditPage<T>>
         errorMessage = e.toString();
       });   
     }
+
+    /* once validation and db operation has passed, we can run projections. If they fail who cares. */    
+    if (!mounted) return;
+    try {
+      setState((){ loading = true; });
+      await widget.keyFieldChangedHandler();
+    }
+    on GenerateProjectionsException catch(_){
+      /* nothing to do with exception, just ignore it */
+    }
+
+    if (mounted) Navigator.pop(context);
   }
 
   @override

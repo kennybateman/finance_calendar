@@ -12,14 +12,14 @@ import '../shared/select_form_input.dart';
 import '../shared/text_form_input.dart';
 import '../shared/crud_edit_page.dart';
 
-import 'dart:developer' as developer;
+//import 'dart:developer' as developer;
 
 class EditIncomePage extends StatefulWidget{
   final GenerateProjectionsUseCase generateProjections;
   final Future<List<({int pk, String name})>> Function() getAccountNames;
   final Future<List<({int pk, String name})>> Function() getIncomeNames;
   final Future<Income>        Function(Income) createNew;  // C
-  final Income income;                                     // R (bill being edited)
+  final Income income;                                     // R
   final Future<Income>        Function(Income) updateItem; // U
   final Future<void>          Function(Income) deleteItem; // D
   const EditIncomePage({super.key, 
@@ -92,11 +92,14 @@ class EditIncomePageState extends State<EditIncomePage> {
   }
 
   void validateInput() {
-    /* Database doesn't allow same names. Don't rely on that though. Catch it here */
     final newName = nameController.text;
-    developer.log("need to make sure no income names match $newName ...");
+    
+    if (newName == "") {
+      throw EditException("Name cannot be empty.");
+    }
+
+    /* Database doesn't allow same names. Don't rely on that though. Catch it here */
     for(var pkNameTuple in incomeNames){
-      developer.log("checking: ${pkNameTuple.name}");
       if (pkNameTuple.pk == widget.income.pk) continue;
       
       if (newName == pkNameTuple.name){

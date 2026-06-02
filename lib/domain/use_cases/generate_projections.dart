@@ -11,7 +11,7 @@ import 'package:finance_calendar/domain/models/account.dart';
 import 'package:finance_calendar/domain/models/bill.dart';
 import 'package:finance_calendar/domain/models/income.dart';
 import 'package:finance_calendar/domain/models/projection.dart';
-// import 'dart:developer' as developer;
+import 'dart:developer' as developer;
 
 class GenerateProjectionsUseCase {
   final AccountsRepository accountsRepo;
@@ -106,9 +106,6 @@ class GenerateProjectionsUseCase {
       }
     }
 
-
-
-
     List<Bill> updatedBills = [];
     for(var bill in allBills){
       var dueDate = bill.dueDate!;
@@ -164,7 +161,6 @@ class GenerateProjectionsUseCase {
     }
   }
 
-
   DateTime findNextDueDate(DateTime dueDate, String frequency, int anchorDay){
     switch(frequency){
       case "weekly":
@@ -190,6 +186,7 @@ class GenerateProjectionsUseCase {
   }
 
   Future<void> generateProjections() async {
+    developer.log("RUNNING PROJECTIONS!");
     await loadAndValidateAllRecords();
     await catchUpDueDates();
 
@@ -284,6 +281,7 @@ class GenerateProjectionsUseCase {
       /* iterate to next day */
       projectionDate = projectionDate.add(const Duration(days: 1));
     }
+    developer.log("DONE RUNNING PROJECTIONS!");
   }
 }
 

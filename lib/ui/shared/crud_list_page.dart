@@ -1,7 +1,9 @@
 // Dart and Flutter
+import 'package:finance_calendar/data/repositories/settings_repository.dart';
 import 'package:flutter/material.dart';
 // DOMAIN
 import 'package:finance_calendar/domain/models/abstract_domain_model.dart';
+import 'package:finance_calendar/domain/models/settings.dart';
 
 class CrudListPage<T extends DomainModel<T>> extends StatefulWidget {
   final Future<void> Function()? preloadHook;
@@ -15,6 +17,8 @@ class CrudListPage<T extends DomainModel<T>> extends StatefulWidget {
   final Widget Function(T item)? editPage;
   final Widget Function(T item)? detailPage;
 
+  final SettingsRepository settingsRepo;
+
   const CrudListPage({
     super.key,
     this.preloadHook,
@@ -27,6 +31,7 @@ class CrudListPage<T extends DomainModel<T>> extends StatefulWidget {
     this.createNewTemp,
     this.editPage,
     this.detailPage,
+    required this.settingsRepo,
   });
 
   @override
@@ -39,18 +44,12 @@ class CrudListPageState<T extends DomainModel<T>> extends State<CrudListPage<T>>
   late List<T> items = [];
   
   /* zoom variables */
-  late double startScale = 1.0;
-  late double scale = 1.0;
+  late double startScale = widget.settingsRepo.getSettings().fontSize;
+  late double scale = startScale;
 
   @override
   void initState(){
     super.initState();
-    loading = true;
-    statusMessage = "";
-
-    /* zoom variables */
-    startScale = 1.0;
-    scale = startScale;
     loadItems(); // async call
   }
 
@@ -111,19 +110,23 @@ class CrudListPageState<T extends DomainModel<T>> extends State<CrudListPage<T>>
         IconButton(
           icon: Icon(Icons.remove),
           tooltip: "Zoom out",
-          onPressed: () {
+          onPressed: () async {
+            var settings = widget.settingsRepo.getSettings();
             setState(() {
-              scale = (scale - 0.1).clamp(0.4, 1.0);
+              scale = (settings.fontSize - 0.1).clamp(0.4, 1.0);
             });
+            widget.settingsRepo.updateSettings(Settings(darkMode: settings.darkMode, fontSize: scale));
           },
         ),
         IconButton(
           icon: Icon(Icons.add),
           tooltip: "Zoom in",
           onPressed: () {
+            var settings = widget.settingsRepo.getSettings();
             setState(() {
-              scale = (scale + 0.1).clamp(0.4, 1.0);
+              scale = (settings.fontSize + 0.1).clamp(0.4, 1.0);
             });
+            widget.settingsRepo.updateSettings(Settings(darkMode: settings.darkMode, fontSize: scale));
           },
         ),
       ]

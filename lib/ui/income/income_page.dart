@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 // DATA
 import '../../data/repositories/income_repository.dart';
 import '../../data/repositories/accounts_repository.dart';
+import '../../data/repositories/settings_repository.dart';
 // DOMAIN
 import 'package:finance_calendar/domain/use_cases/helpers.dart';
 import 'package:finance_calendar/domain/use_cases/generate_projections.dart';
@@ -15,10 +16,12 @@ class IncomePage extends StatelessWidget {
   final IncomeRepository repo;
   final AccountsRepository accountsRepo;
   final GenerateProjectionsUseCase generateProjections;
+  final SettingsRepository settingsRepo;
   const IncomePage({super.key, 
     required this.repo, 
     required this.accountsRepo,
     required this.generateProjections,
+    required this.settingsRepo,
   });
 
   @override
@@ -44,6 +47,7 @@ class IncomePage extends StatelessWidget {
     }
 
     return CrudListPage<Income>(
+      settingsRepo: settingsRepo,
       getAll: repo.getAll,
       buildTileWidget: buildTileWidget,
       useAddButton: true,

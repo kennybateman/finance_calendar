@@ -97,7 +97,8 @@ class FinanceCalendarViewModel extends ChangeNotifier {
         body: TabBarView(children: [
           ProjectionsPage(
             repo: projectionsRepo, 
-            generateProjections: generateProjections
+            generateProjections: generateProjections,
+            settingsRepo: settingsRepository,
           ),
           CalendarPage(
             projectionsRepo: projectionsRepo, 
@@ -105,17 +106,20 @@ class FinanceCalendarViewModel extends ChangeNotifier {
           ),
           AccountsPage(
             repo: accountRepo, 
-            generateProjections: generateProjections
+            generateProjections: generateProjections,
+            settingsRepo: settingsRepository,
           ),
           IncomePage(
             repo: incomeRepo, 
             accountsRepo: accountRepo, 
-            generateProjections: generateProjections
+            generateProjections: generateProjections,
+            settingsRepo: settingsRepository,
           ),
           BillsPage(
             repo: billRepo, 
             accountsRepo: accountRepo, 
-            generateProjections: generateProjections
+            generateProjections: generateProjections,
+            settingsRepo: settingsRepository,
           ),
           SettingsPage(
             getSettings: settingsRepository.getSettings,

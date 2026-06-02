@@ -38,7 +38,8 @@ class SettingsPage extends StatefulWidget {
 }
 
 class SettingsPageState extends State<SettingsPage> {
-  void darkModeOnChange(bool value){
+
+  void darkModeOnChange(bool value) async {
     final existingSettings = widget.getSettings();
     widget.saveSettings(Settings(darkMode: value, fontSize: existingSettings.fontSize));
     setState((){});
@@ -131,7 +132,6 @@ class SettingsPageState extends State<SettingsPage> {
     ];
 
     return Scaffold(
-      appBar: AppBar(title: Text("Settings")),
       body: Padding(padding: EdgeInsets.all(16), child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: all)));

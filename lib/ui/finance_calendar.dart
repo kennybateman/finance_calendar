@@ -7,6 +7,8 @@ import '../data/services/settings_wrapper.dart';
 // UI
 import 'finance_calendar_view_model.dart';
 
+//import 'dart:developer' as dev;
+
 class FinanceCalendar extends StatefulWidget {
   final DatabaseWrapper databaseWrapper;
   final SettingsWrapper settingsWrapper;
@@ -50,6 +52,7 @@ class FinanceCalendarState extends State<FinanceCalendar>{
     });
   }
 
+  /* this is just a callback to force rebuilding at this level */
   void updatedSettings(){
     setState((){});
   }
@@ -62,7 +65,7 @@ class FinanceCalendarState extends State<FinanceCalendar>{
       title: widget.viewModel.appTitle, 
       theme: ThemeData.light(), 
       darkTheme: ThemeData.dark(),
-      themeMode: darkMode ? ThemeMode.light : ThemeMode.dark,
+      themeMode: darkMode ? ThemeMode.dark : ThemeMode.light,
       home: Scaffold(
         appBar: AppBar(toolbarHeight: 0),
         body: dbIsInitialized ? widget.viewModel.generateHomeBody(updatedSettings) : widget.viewModel.loading,

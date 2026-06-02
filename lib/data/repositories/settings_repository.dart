@@ -14,7 +14,7 @@ class SettingsRepository implements Repository<Settings>{
     return Settings(darkMode: darkMode, fontSize: fontSize);
   }
 
-  void updateSettings(Settings updatedSettings) async {
+  void updateSettings(Settings updatedSettings) {
     settingsWrapper.setDarkMode(updatedSettings.darkMode);
     settingsWrapper.setFontSize(updatedSettings.fontSize);
   }

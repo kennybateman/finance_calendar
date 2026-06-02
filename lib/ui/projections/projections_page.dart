@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 // DATA
 import '../../data/repositories/projections_repository.dart';
+import '../../data/repositories/settings_repository.dart';
 // DOMAIN
 //import 'package:finance_calendar/domain/use_cases/helpers.dart';
 import 'package:finance_calendar/domain/models/projection_read_only.dart';
@@ -13,10 +14,12 @@ import 'projection_details_page.dart';
 class ProjectionsPage extends StatelessWidget {
   final ProjectionsRepository repo;
   final GenerateProjectionsUseCase generateProjections;
+  final SettingsRepository settingsRepo;
   const ProjectionsPage({
     super.key, 
     required this.repo,
     required this.generateProjections,
+    required this.settingsRepo,
   });
 
   @override
@@ -41,6 +44,7 @@ class ProjectionsPage extends StatelessWidget {
     }
 
     return CrudListPage<ProjectionReadModel>(
+      settingsRepo: settingsRepo,
       getAll: tryGetAllReadModels,
       buildTileWidget: toTileWidget,
       useAddButton: false,

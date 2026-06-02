@@ -23,7 +23,6 @@ class ProjectionDetailPageState extends State<ProjectionDetailPage> {
     ];
 
     return Scaffold(
-      appBar: AppBar(title: Text("Edit Income")),
       body: Padding(padding: EdgeInsets.all(16), child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: all)));

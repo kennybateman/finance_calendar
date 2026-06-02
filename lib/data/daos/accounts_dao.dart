@@ -15,4 +15,10 @@ class AccountsDAO extends DAO<AccountsRow>{
     final allAccounts = await getAll(); // don't fetch individual fields, always fetch the whole row.
     return allAccounts.map((a) => (pk: a.pk!, name: a.name)).toList();
   }
+
+  Future<void> deleteAll() async {
+    final db = dbWrapper.database;
+    await db.execute('DELETE FROM $tableName');
+    await db.rawDelete("DELETE FROM sqlite_sequence WHERE name = '$tableName'");
+  }
 }

@@ -1,5 +1,6 @@
 // Excel lib
 import 'package:excel/excel.dart';
+import 'dart:math';
 // Data
 import 'package:finance_calendar/domain/use_cases/helpers.dart';
 import '../../data/repositories/accounts_repository.dart';
@@ -111,16 +112,11 @@ class Backup {
   }
 
   Future<void> unpackDataFromExcel(Excel excel) async {
-
-    final rows = excel.tables['accounts']?.rows ?? [];
-
-    // skip header row
-    final dataRows = rows.skip(1);
-
-    var accounts = dataRows.map((row) {
+    final accountsRows = excel.tables['accounts']?.rows ?? [];
+    var accounts = accountsRows.skip(1).map((row) {
       return Account(
         pk:                 unpackInt(row[0]!),
-        name:               unpackString(row[1]!, ''),
+        name:               unpackString(row[1]!, randomAccountName()),
         balance:            unpackInt(row[2]!),
         balanceDate:        unpackDate(row[3]!),
         accountType:        unpackString(row[4]!, 'debit'),
@@ -134,14 +130,11 @@ class Backup {
       );
     }).toList();
 
-    for(var account in accounts){
-      accountsRepo.saveChanges(account);
-    }
-
-    var bills = dataRows.map((row) {
+    final billsRows = excel.tables['bills']?.rows ?? [];
+    var bills = billsRows.skip(1).map((row) {
       return Bill(
         pk:               unpackInt(row[0]!),
-        name:             unpackString(row[1]!, ''),
+        name:             unpackString(row[1]!, randombillName()),
         amount:           unpackInt(row[2]!),
         dueFrequency:     unpackString(row[3]!, 'monthly'),
         dueDate:          unpackDate(row[4]!),
@@ -150,14 +143,11 @@ class Backup {
       );
     }).toList();
 
-    for(var bill in bills){
-      billsRepo.saveChanges(bill);
-    }
-
-    var incomes = dataRows.map((row) {
+    final incomeRows = excel.tables['income']?.rows ?? [];
+    var incomes = incomeRows.skip(1).map((row) {
       return Income(
         pk:               unpackInt(row[0]!),
-        name:             unpackString(row[1]!, ''),
+        name:             unpackString(row[1]!, randomIncomeName()),
         amount:           unpackInt(row[2]!),
         dueFrequency:     unpackString(row[3]!, 'monthly'),
         dueDate:          unpackDate(row[4]!),
@@ -166,10 +156,21 @@ class Backup {
       );
     }).toList();
 
+    await accountsRepo.deleteAllAccounts();
+    for(var account in accounts){
+      await accountsRepo.createNew(account.clearPk());
+    }
+    await billsRepo.deleteAllBills();
+    for(var bill in bills){
+      await billsRepo.createNew(bill.clearPk());
+    }
+    await incomeRepo.deleteAllIncome();
     for(var income in incomes){
-      incomeRepo.saveChanges(income);
+      await incomeRepo.createNew(income.clearPk());
     }
   }
+
+
 
   int unpackInt(Data data){
     if (data.value is int) return data.value as int;
@@ -197,4 +198,170 @@ class Backup {
     final val = data.value.toString();
     return val == 'true';
   }
+
+  String randomAccountName(){
+    final random = Random();
+    return funAccountNames[random.nextInt(funAccountNames.length)];
+  }
+  final funAccountNames = <String>[
+    'World Domination Fund',
+    'Stargate Budget',
+    'Manhattan Project',
+    'Deep Space Initiative',
+    'Secret Volcano Base',
+    'Mars Colonization Reserve',
+    'Temporal Research Grant',
+    'Black Ops Procurement',
+    'Orbital Defense Program',
+    'Interstellar Survey Fund',
+    'Area 51 Maintenance',
+    'Moon Base Alpha',
+    'Doomsday Contingency',
+    'Quantum Computing Lab',
+    'Underground Bunker Expenses',
+    'Antimatter Development',
+    'Project Chimera',
+    'Alien Diplomacy Office',
+    'Cybernetic Enhancement Division',
+    'Classified Acquisitions',
+    'Galactic Expansion Trust',
+    'Planetary Terraforming Budget',
+    'Nanotech Research Fund',
+    'Dragon Hoard Holdings',
+    'Treasure Map Recovery',
+    'Archaeological Expeditions',
+    'Lost City Exploration',
+    'Time Machine Repairs',
+    'Parallel Universe Operations',
+    'Cryptid Observation Program',
+    'Monster Containment Unit',
+    'Wizard Council Treasury',
+    'Necromancy Endowment',
+    'Artifact Recovery Team',
+    'Global Surveillance Network',
+    'Emergency Escape Rocket',
+    'Deep Sea Exploration',
+    'Robot Uprising Prevention',
+    'AI Alignment Initiative',
+    'Weather Control Project',
+    'Subterranean Railway',
+    'Phoenix Resurrection Fund',
+    'Kaiju Defense Force',
+    'Atlantis Infrastructure',
+    'Unidentified Signal Analysis',
+    'Coffee for the Resistance'
+    'Villain Retirement Plan'
+    'Laser Shark R&D'
+    'Evil Lair Utilities'
+    'Moon Rent'
+    'Emergency Dinosaur Fund'
+    'Hovercar Maintenance'
+    'Apocalypse Preparedness'
+    'Unfinished Inventions'
+    'Mystery Box Purchases'
+  ];
+
+  String randomIncomeName(){
+    final random = Random();
+    return funIncomeNames[random.nextInt(funIncomeNames.length)];
+  }
+  final funIncomeNames = <String>[
+    'Dragon Slaying',
+    'Treasure Hunt',
+    'Asteroid Dust Sales',
+    'Royal Bounty',
+    'Pirate Treasure Recovery',
+    'Alchemy Consulting',
+    'Wizard Apprenticeship Stipend',
+    'Space Freight Contract',
+    'Monster Extermination',
+    'Artifact Discovery',
+    'Time Traveler Expense Reimbursement',
+    'Atlantis Salvage Rights',
+    'Gold Rush Prospecting',
+    'Silk Road Trading',
+    'East India Cargo Dividend',
+    'Privateering Commission',
+    'Railroad Expansion Shares',
+    'Canal Construction Bonus',
+    'Frontier Homestead Grant',
+    'Klondike Mining Claim',
+    'Knightly Tournament Winnings',
+    'Mercenary Contract',
+    'Castle Siege Bonus',
+    'Cartography Commission',
+    'Whaling Expedition Share',
+    'Treasure Island Proceeds',
+    'Moby Dick Insurance Settlement',
+    'Sherwood Forest Redistribution',
+    'Excalibur Authentication Fees',
+    'Round Table Consulting',
+    'Odyssey Voyage Earnings',
+    'Argonaut Expedition Dividend',
+    'Trojan Horse Procurement Contract',
+    'Eldorado Exploration Grant',
+    'Nautilus Salvage Operations',
+    'Martian Colony Payroll',
+    'Terraforming Royalties',
+    'Moon Mining Lease',
+    'Stargate Toll Collection',
+    'Robot Repair Services',
+    'Artificial Intelligence Licensing',
+    'Kaiju Damage Compensation',
+    'Cryptid Photography Sales',
+    'Parallel Universe Arbitration',
+    'Interstellar Customs Refund',
+  ];
+
+  String randombillName(){
+    final random = Random();
+    return funBillNames[random.nextInt(funBillNames.length)];
+  }
+  final funBillNames = <String>[
+    'Castle Mortgage',
+    'Dungeon Maintenance',
+    'Dragon Insurance Premium',
+    'Wizard Tower Utilities',
+    'Spaceship Fuel',
+    'Moon Base Rent',
+    'Orbital Docking Fees',
+    'Stargate Access Subscription',
+    'Time Machine Repairs',
+    'Robot Maintenance Contract',
+    'AI Cloud Hosting',
+    'Evil Lair Property Tax',
+    'Secret Volcano Base Utilities',
+    'Castle Moat Cleaning',
+    'Drawbridge Inspection',
+    'Trebuchet Maintenance',
+    'Royal Licensing Fees',
+    'Guild Membership Dues',
+    'Knight Armor Upkeep',
+    'Phoenix Fire Damage Coverage',
+    'Kaiju Defense Assessment',
+    'Monster Containment Permit',
+    'Necromancy Certification Renewal',
+    'Magic Wand Replacement Plan',
+    'Potion Ingredients Subscription',
+    'Spellbook Publishing Fees',
+    'Atlantis Flood Insurance',
+    'Deep Sea Pressure Testing',
+    'Submarine Hull Repairs',
+    'Treasure Map Authentication',
+    'Cryptid Research Grant Repayment',
+    'Alien Embassy Visa Fees',
+    'Terraforming Permit Costs',
+    'Interstellar Customs Duty',
+    'Asteroid Mining Equipment Lease',
+    'Quantum Server Hosting',
+    'Parallel Universe Travel Insurance',
+    'Temporal Compliance Penalties',
+    'Witness Protection Program',
+    'Sherwood Forest Toll Charges',
+    'Trojan Horse Storage Fees',
+    'Nautilus Dry Dock Charges',
+    'Mummy Curse Removal Service',
+    'Haunted Castle Exorcism',
+    'Volcano Lair HOA Dues',
+  ]; 
 }

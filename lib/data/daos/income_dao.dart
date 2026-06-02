@@ -15,4 +15,10 @@ class IncomeDAO extends DAO<IncomeRow>{
     final allIncome = await getAll(); // don't fetch individual fields, always fetch the whole row.
     return allIncome.map((i) => (pk: i.pk!, name: i.name)).toList();
   }
+
+  Future<void> deleteAll() async {
+    final db = dbWrapper.database;
+    await db.execute('DELETE FROM $tableName');
+    await db.rawDelete("DELETE FROM sqlite_sequence WHERE name = '$tableName'");
+  }
 }

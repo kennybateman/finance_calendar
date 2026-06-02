@@ -99,4 +99,8 @@ class AccountsRepository implements Repository<Account>{
     AccountsRow row = domainToDataModel(itemToDelete);
     await dao.delete(row);
   }
+
+  Future<void> deleteAllAccounts() async {
+    await dao.deleteAll();
+  }
 }

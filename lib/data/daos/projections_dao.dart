@@ -11,8 +11,8 @@ class ProjectionsDAO extends DAO<ProjectionsRow>{
 
   Future<void> deleteAll() async {
     final db = dbWrapper.database;
-    db.execute('DELETE FROM $tableName');
-    db.rawDelete("DELETE FROM sqlite_sequence WHERE name = '$tableName'");
+    await db.execute('DELETE FROM $tableName');
+    await db.rawDelete("DELETE FROM sqlite_sequence WHERE name = '$tableName'");
   }
 
   Future<ProjectionsRow?> getByDate(String dateString) async {

@@ -91,4 +91,8 @@ class IncomeRepository extends Repository<Income>{
     IncomeRow row = domainToDataModel(itemToDelete);
     dao.delete(row);
   }
+
+  Future<void> deleteAllIncome() async {
+    await dao.deleteAll();
+  }
 }

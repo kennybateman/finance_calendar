@@ -124,4 +124,21 @@ class Account extends DomainModel<Account> {
       payFromAccount: payFromAccount,
     );
   }
+
+  Account clearPk(){
+    return Account(
+      pk: null,
+      name: name,
+      balance: balance,
+      balanceDate: balanceDate,
+      accountType: accountType,
+      creditLimit: creditLimit,
+      interest: interest,
+      dueFrequency: dueFrequency,
+      dueDate: dueDate,
+      dueDateAnchorDay: dueDateAnchorDay,
+      payFromAccountPk: payFromAccountPk,
+      payFromAccount: payFromAccount,
+    );
+  }
 }

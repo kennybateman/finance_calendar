@@ -33,7 +33,7 @@ void main() async {
     saveHandler = SaveHandler.saveExcelDesktop;
     feedbackHandler = FeedbackHandler.feedbackHandlerDesktop;
   }else{
-    saveHandler = SaveHandler.saveExcelDesktop;
+    saveHandler = SaveHandler.saveExcelMobile;
     feedbackHandler = FeedbackHandler.feedbackHandlerMobile;
   }
 

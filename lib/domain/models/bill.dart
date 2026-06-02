@@ -87,4 +87,17 @@ class Bill extends DomainModel<Bill>{
       payFromAccount: payFromAccount,
     );
   }
+
+  Bill clearPk(){
+    return Bill(
+      pk: null,
+      name: name,
+      amount: amount,
+      dueDate: dueDate,
+      dueDateAnchorDay: dueDateAnchorDay,
+      dueFrequency: dueFrequency,
+      payFromAccountPk: payFromAccountPk,
+      payFromAccount: payFromAccount,
+    );
+  }
 }

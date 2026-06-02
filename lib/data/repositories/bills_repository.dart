@@ -88,4 +88,8 @@ class BillsRepository extends Repository<Bill>{
     BillsRow row = domainToDataModel(itemToDelete);
     dao.delete(row);
   }
+
+  Future<void> deleteAllBills() async {
+    await dao.deleteAll();
+  }
 }

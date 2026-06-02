@@ -15,4 +15,10 @@ class BillsDAO extends DAO<BillsRow>{
     final allBills = await getAll(); // don't fetch individual fields, always fetch the whole row.
     return allBills.map((b) => (b.pk!, b.name)).toList();
   }
+
+  Future<void> deleteAll() async {
+    final db = dbWrapper.database;
+    await db.execute('DELETE FROM $tableName');
+    await db.rawDelete("DELETE FROM sqlite_sequence WHERE name = '$tableName'");
+  }
 }

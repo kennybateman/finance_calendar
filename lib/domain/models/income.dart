@@ -88,4 +88,17 @@ class Income extends DomainModel<Income> {
       payToAccount: payToAccount
     );
   }
+
+  Income clearPk(){
+    return Income(
+      pk: null,
+      name: name,
+      amount: amount,
+      dueDate: dueDate,
+      dueDateAnchorDay: dueDateAnchorDay,
+      dueFrequency: dueFrequency,
+      payToAccountPk: payToAccountPk,
+      payToAccount: payToAccount
+    );
+  }
 }

@@ -11,6 +11,22 @@ import '../../domain/models/account.dart';
 import '../../domain/models/income.dart';
 import '../../domain/models/bill.dart';
 
+/*
+  PLAN: fix export so that it all works nicely.
+  Problem 1: override or delete all?
+    Right now just delete all. But...
+    I really want to...
+      1. override if they exist
+      2. add if they don't
+      3. don't touch if not in the backup at all
+
+  Problem 2: how to abstract the database
+    1. don't save keys, identify records by name.
+    2. save linked accounts by name
+    3. when importing relink the accounts
+
+  If I do this then exporting and importing should be fairly seemless.
+*/
 class Backup {
   final AccountsRepository accountsRepo;
   final BillsRepository billsRepo;
@@ -30,22 +46,19 @@ class Backup {
 
     final sheet1 = excel['accounts'];
     sheet1.appendRow([
-      TextCellValue("pk"),
       TextCellValue("name"),
       TextCellValue("balance"),
-      TextCellValue("balanceDate"),
-      TextCellValue("accountType"),
-      TextCellValue("creditLimit"),
+      TextCellValue("balance date"),
+      TextCellValue("account type"),
+      TextCellValue("credit limit"),
       TextCellValue("interest"),
-      TextCellValue("dueFrequency"),
-      TextCellValue("dueDate"),
-      TextCellValue("dueDateAnchorDay"),
-      TextCellValue("payFromAccountPk"),
-      TextCellValue("payFromThisAccount"),
+      TextCellValue("due frequency"),
+      TextCellValue("due date"),
+      TextCellValue("due date anchor day"),
+      TextCellValue("pay from account"),
     ]);
     for(var account in allAccounts){
-      List<CellValue> cellValues = [ 
-        TextCellValue(account.pk.toString()),
+      List<CellValue> cellValues = [
         TextCellValue(account.name.toString()),
         TextCellValue(account.balance.toString()),
         TextCellValue(dateToStringForDB(account.balanceDate).toString()),
@@ -55,54 +68,49 @@ class Backup {
         TextCellValue(account.dueFrequency.toString()),
         TextCellValue(dateToStringForDB(account.dueDate).toString()),
         TextCellValue(account.dueDateAnchorDay.toString()),
-        TextCellValue(account.payFromAccountPk.toString()),
-        TextCellValue(account.payFromThisAccount.toString()),
+        TextCellValue(account.payFromAccount?.name ?? ''),
       ];
       sheet1.appendRow(cellValues);
     }
 
     final sheet2 = excel['income'];
     sheet2.appendRow([
-      TextCellValue("pk"),
       TextCellValue("name"),
       TextCellValue("amount"),
-      TextCellValue("dueFrequency"),
-      TextCellValue("dueDate"),
-      TextCellValue("dueDateAnchorDay"),
-      TextCellValue("payToAccountPk"),
+      TextCellValue("due frequency"),
+      TextCellValue("due date"),
+      TextCellValue("anchor day"),
+      TextCellValue("pay to account"),
     ]);
     for(var income in allIncome){
       List<CellValue> cellValues = [ 
-        TextCellValue(income.pk.toString()),
         TextCellValue(income.name.toString()),
         TextCellValue(income.amount.toString()),
         TextCellValue(income.dueFrequency.toString()),
         TextCellValue(dateToStringForDB(income.dueDate).toString()),
         TextCellValue(income.dueDateAnchorDay.toString()),
-        TextCellValue(income.payToAccountPk.toString()),
+        TextCellValue(income.payToAccount?.name ?? ''),
       ];
       sheet2.appendRow(cellValues);
     }
 
     final sheet3 = excel['bills'];
     sheet3.appendRow([
-      TextCellValue("pk"),
       TextCellValue("name"),
       TextCellValue("amount"),
-      TextCellValue("dueFrequency"),
-      TextCellValue("dueDate"),
-      TextCellValue("dueDateAnchorDay"),
-      TextCellValue("payFromAccountPk"),
+      TextCellValue("due frequency"),
+      TextCellValue("due date"),
+      TextCellValue("due date anchor day"),
+      TextCellValue("pay from account"),
     ]);
     for(var bill in allBills){
       List<CellValue> cellValues = [ 
-        TextCellValue(bill.pk.toString()),
         TextCellValue(bill.name.toString()),
         TextCellValue(bill.amount.toString()),
         TextCellValue(bill.dueFrequency.toString()),
         TextCellValue(dateToStringForDB(bill.dueDate).toString()),
         TextCellValue(bill.dueDateAnchorDay.toString()),
-        TextCellValue(bill.payFromAccountPk.toString()),
+        TextCellValue(bill.payFromAccount?.name ?? ''),
       ];
       sheet3.appendRow(cellValues);
     }
@@ -113,60 +121,95 @@ class Backup {
 
   Future<void> unpackDataFromExcel(Excel excel) async {
     final accountsRows = excel.tables['accounts']?.rows ?? [];
-    var accounts = accountsRows.skip(1).map((row) {
-      return Account(
-        pk:                 unpackInt(row[0]!),
-        name:               unpackString(row[1]!, randomAccountName()),
-        balance:            unpackInt(row[2]!),
-        balanceDate:        unpackDate(row[3]!),
-        accountType:        unpackString(row[4]!, 'debit'),
-        creditLimit:        unpackInt(row[5]!),
-        interest:           unpackInt(row[6]!),
-        dueFrequency:       unpackString(row[7]!, 'monthly'),
-        dueDate:            unpackDate(row[8]!),
-        dueDateAnchorDay:   unpackNullableInt(row[9]!),
-        payFromAccountPk:   unpackNullableInt(row[10]!),
-        payFromThisAccount: unpackBool(row[11]!),
+    List<(Account,String)> accountTuples = accountsRows.skip(1).map((row) {
+      return (
+        Account(
+          name:               unpackString(row[0]!, randomAccountName()), // name must be unique, so I can't use a common default
+          balance:            unpackInt(row[1]!),
+          balanceDate:        unpackDate(row[2]!),
+          accountType:        unpackString(row[3]!, 'debit'),
+          creditLimit:        unpackInt(row[4]!),
+          interest:           unpackInt(row[5]!),
+          dueFrequency:       unpackString(row[6]!, 'monthly'),
+          dueDate:            unpackDate(row[7]!),
+          dueDateAnchorDay:   unpackNullableInt(row[8]!),
+        ),
+        unpackString(row[9]!,'')
       );
     }).toList();
 
     final billsRows = excel.tables['bills']?.rows ?? [];
-    var bills = billsRows.skip(1).map((row) {
-      return Bill(
-        pk:               unpackInt(row[0]!),
-        name:             unpackString(row[1]!, randombillName()),
-        amount:           unpackInt(row[2]!),
-        dueFrequency:     unpackString(row[3]!, 'monthly'),
-        dueDate:          unpackDate(row[4]!),
-        dueDateAnchorDay: unpackNullableInt(row[5]!),
-        payFromAccountPk: unpackNullableInt(row[6]!),
-      );
+    List<(Bill,String)> billTuples = billsRows.skip(1).map((row) {
+      return (Bill(
+        name:             unpackString(row[0]!, randombillName()),
+        amount:           unpackInt(row[1]!),
+        dueFrequency:     unpackString(row[2]!, 'monthly'),
+        dueDate:          unpackDate(row[3]!),
+        dueDateAnchorDay: unpackNullableInt(row[4]!),
+      ),
+      unpackString(row[5]!, ''));
     }).toList();
 
     final incomeRows = excel.tables['income']?.rows ?? [];
-    var incomes = incomeRows.skip(1).map((row) {
-      return Income(
-        pk:               unpackInt(row[0]!),
-        name:             unpackString(row[1]!, randomIncomeName()),
-        amount:           unpackInt(row[2]!),
-        dueFrequency:     unpackString(row[3]!, 'monthly'),
-        dueDate:          unpackDate(row[4]!),
-        dueDateAnchorDay: unpackNullableInt(row[5]!),
-        payToAccountPk:   unpackNullableInt(row[6]!),
+    List<(Income,String)> incomeTuples = incomeRows.skip(1).map((row) {
+      return (
+        Income(
+          name:             unpackString(row[0]!, randomIncomeName()),
+          amount:           unpackInt(row[1]!),
+          dueFrequency:     unpackString(row[2]!, 'monthly'),
+          dueDate:          unpackDate(row[3]!),
+          dueDateAnchorDay: unpackNullableInt(row[4]!),
+        ),
+        unpackString(row[5]!, '')
       );
     }).toList();
 
+    /* initially save all the records... */
     await accountsRepo.deleteAllAccounts();
-    for(var account in accounts){
-      await accountsRepo.createNew(account.clearPk());
+    for(var accountTuple in accountTuples){
+      await accountsRepo.createNew(accountTuple.$1);
     }
     await billsRepo.deleteAllBills();
-    for(var bill in bills){
-      await billsRepo.createNew(bill.clearPk());
+    for(var bill in billTuples){
+      await billsRepo.createNew(bill.$1);
     }
     await incomeRepo.deleteAllIncome();
-    for(var income in incomes){
-      await incomeRepo.createNew(income.clearPk());
+    for(var income in incomeTuples){
+      await incomeRepo.createNew(income.$1);
+    }
+
+    /* now load them and go over them again to link the pay accounts */
+    final accountsByName = await accountsRepo.getAllByName();
+    for(var accountTuple in accountTuples){
+      if (accountTuple.$2 == '') continue;
+      final accountName = accountTuple.$1.name;
+      final accountToLinkName = accountTuple.$2;
+      final account = accountsByName[accountName]!;
+      final accountToLink = accountsByName[accountToLinkName];
+      if (accountToLink == null) continue;
+      await accountsRepo.saveChanges(account.updateValue(payFromAccountPk: accountToLink.pk));
+    }
+
+    final billsByName = await billsRepo.getAllByName();
+    for(var billsTuple in billTuples){
+      if (billsTuple.$2 == '') continue;
+      final billName = billsTuple.$1.name;
+      final accountToLinkName = billsTuple.$2;
+      final bill = billsByName[billName]!;
+      final accountToLink = accountsByName[accountToLinkName];
+      if (accountToLink == null) continue;
+      await billsRepo.saveChanges(bill.updateValue(payFromAccountPk: accountToLink.pk));
+    }
+
+    final incomeByName = await incomeRepo.getAllByName();
+    for(var incomeTuple in incomeTuples){
+      if (incomeTuple.$2 == '') continue;
+      final incomeName = incomeTuple.$1.name;
+      final accountToLinkName = incomeTuple.$2;
+      final income = incomeByName[incomeName]!;
+      final accountToLink = accountsByName[accountToLinkName];
+      if (accountToLink == null) continue;
+      await incomeRepo.saveChanges(income.updateValue(payToAccountPk: accountToLink.pk));
     }
   }
 

@@ -4,8 +4,20 @@ import 'package:flutter/material.dart';
 // DATA
 import '../data/services/database_wrapper.dart';
 import '../data/services/settings_wrapper.dart';
+import '../data/repositories/projections_repository.dart';
+import '../data/repositories/accounts_repository.dart';
+import '../data/repositories/income_repository.dart';
+import '../data/repositories/bills_repository.dart';
+import '../data/repositories/settings_repository.dart';
 // UI
 import 'finance_calendar_view_model.dart';
+import 'projections/projections_page.dart';
+import 'calendar/calendar_page.dart';
+import 'accounts/accounts_page.dart';
+import 'income/income_page.dart';
+import 'bills/bills_page.dart';
+import 'settings/settings_page.dart';
+import 'information/information_page.dart';
 
 //import 'dart:developer' as dev;
 
@@ -14,61 +26,113 @@ class FinanceCalendar extends StatefulWidget {
   final SettingsWrapper settingsWrapper;
   final Future<void> Function(Excel, String) saveHandler;
   final Future<void> Function(BuildContext) feedbackHandler;
-  final FinanceCalendarViewModel viewModel;
-  FinanceCalendar({ 
+  const FinanceCalendar({ 
     super.key, 
     required this.databaseWrapper,
     required this.settingsWrapper,
     required this.saveHandler,
     required this.feedbackHandler,
-  }) : 
-    viewModel = FinanceCalendarViewModel(
-      databaseWrapper, 
-      settingsWrapper, 
-      saveHandler: saveHandler,
-      feedbackHandler: feedbackHandler,
-    );
+  });
 
   @override
   State<FinanceCalendar> createState() => FinanceCalendarState();
 }
 
 class FinanceCalendarState extends State<FinanceCalendar>{
-  late bool dbIsInitialized;
+  late final FinanceCalendarViewModel viewModel;
 
   @override
   void initState() {
     super.initState();
 
-    dbIsInitialized = false;
     initDB();
+
+    viewModel = FinanceCalendarViewModel(
+      saveHandler: widget.saveHandler,
+      feedbackHandler: widget.feedbackHandler,
+      billsRepo: BillsRepository(widget.databaseWrapper),  
+      incomeRepo: IncomeRepository(widget.databaseWrapper),
+      accountsRepo: AccountsRepository(widget.databaseWrapper),
+      projectionsRepo: ProjectionsRepository(widget.databaseWrapper),
+      settingsRepo: SettingsRepository(settingsWrapper: widget.settingsWrapper),
+      updateHome: () => setState((){}),
+    );
   }
 
   Future<void> initDB() async {
     await widget.databaseWrapper.init();
 
-    setState((){
-      dbIsInitialized = true;
-    });
-  }
-
-  /* this is just a callback to force rebuilding at this level */
-  void updatedSettings(){
-    setState((){});
+    if (!mounted) return;
+    viewModel.setLoading(false); // triggers rebuild
   }
 
   @override
   Widget build(BuildContext context) {
-    final bool darkMode = widget.settingsWrapper.getDarkMode();
+    final loadingCircle = const Center(child: CircularProgressIndicator());
+    final homeBody = DefaultTabController(
+      length: 6, 
+      child: Scaffold( 
+        appBar: TabBar(
+          isScrollable: true,
+          tabs: [ 
+            Tab(child: SizedBox(width: 100, child: Center(child: Text("Projections")))),
+            Tab(child: SizedBox(width: 100, child: Center(child: Text("Calendar")))),
+            Tab(child: SizedBox(width: 100, child: Center(child: Text("Accounts")))),
+            Tab(child: SizedBox(width: 100, child: Center(child: Text("Income")))),
+            Tab(child: SizedBox(width: 100, child: Center(child: Text("Bills")))),
+            Tab(text: "⚙"),
+          ]
+        ),
+        body: TabBarView(children: [
+          ProjectionsPage(
+            repo: viewModel.projectionsRepo, 
+            generateProjections: viewModel.generateProjections,
+            settingsRepo: viewModel.settingsRepo,
+          ),
+          CalendarPage(
+            projectionsRepo: viewModel.projectionsRepo, 
+            generateProjections: viewModel.generateProjections
+          ),
+          AccountsPage(
+            repo: viewModel.accountsRepo, 
+            generateProjections: viewModel.generateProjections,
+            settingsRepo: viewModel.settingsRepo,
+          ),
+          IncomePage(
+            repo: viewModel.incomeRepo, 
+            accountsRepo: viewModel.accountsRepo, 
+            generateProjections: viewModel.generateProjections,
+            settingsRepo: viewModel.settingsRepo,
+          ),
+          BillsPage(
+            repo: viewModel.billsRepo, 
+            accountsRepo: viewModel.accountsRepo, 
+            generateProjections: viewModel.generateProjections,
+            settingsRepo: viewModel.settingsRepo,
+          ),
+          SettingsPage(
+            getSettings: viewModel.settingsRepo.getSettings,
+            saveSettings: viewModel.settingsUpdateHandler,
+            saveHandler: viewModel.saveHandler,
+            feedbackHandler: viewModel.feedbackHandler,
+            backupDataToExcel: viewModel.backup.backupDataToExcel,
+            unpackDataFromExcel: viewModel.backup.unpackDataFromExcel,
+            exportProjectionToExcel: viewModel.exportProjections.backupDataToExcel,
+            checkIfExcelCanExport: viewModel.generateProjections.loadAndValidateAllRecords,
+            informationPage: InformationPage(),
+          ),
+        ]),
+      )
+    ); 
 
     return MaterialApp(
-      title: widget.viewModel.appTitle, 
+      title: viewModel.appTitle, 
       theme: ThemeData.light(), 
       darkTheme: ThemeData.dark(),
-      themeMode: darkMode ? ThemeMode.dark : ThemeMode.light,
+      themeMode: widget.settingsWrapper.getDarkMode() ? ThemeMode.dark : ThemeMode.light,
       home: Scaffold(
         appBar: AppBar(toolbarHeight: 0),
-        body: dbIsInitialized ? widget.viewModel.generateHomeBody(updatedSettings) : widget.viewModel.loading,
+        body: viewModel.isLoading ? loadingCircle : homeBody,
       ),
     );
   }

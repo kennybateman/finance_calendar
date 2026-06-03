@@ -18,7 +18,7 @@ class Income extends DomainModel<Income> {
     this.dueDate,
     this.dueDateAnchorDay,
     required this.dueFrequency, 
-    required this.payToAccountPk,
+    this.payToAccountPk,
     this.payToAccount
   });
 

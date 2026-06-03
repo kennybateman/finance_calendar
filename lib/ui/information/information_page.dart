@@ -27,7 +27,7 @@ class InformationPageState extends State<InformationPage> {
     ];
 
     return Scaffold(
-      appBar: AppBar(title: Text("Settings")),
+      appBar: AppBar(title: Text("About")),
       body: Padding(padding: EdgeInsets.all(16), child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: all

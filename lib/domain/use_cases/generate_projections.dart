@@ -68,7 +68,7 @@ class GenerateProjectionsUseCase {
       if (income.dueDate == null) throw GenerateProjectionsException("Income: ${income.name} is missing due date.");
       if (income.dueDateAnchorDay == null) throw GenerateProjectionsException("Income: ${income.name} is missing due date anchor day.");
       if (income.amount == 0) throw GenerateProjectionsException("Income: ${income.name} is missing amount.");
-      if (income.payToAccountPk == null) throw GenerateProjectionsException("Income: ${income.name} is missing pay from account.");
+      if (income.payToAccountPk == null) throw GenerateProjectionsException("Income: ${income.name} is missing pay to account.");
     }
   }
 

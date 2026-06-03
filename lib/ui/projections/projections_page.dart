@@ -49,7 +49,8 @@ class ProjectionsPage extends StatelessWidget {
       buildTileWidget: toTileWidget,
       useAddButton: false,
       detailPage: (ProjectionReadModel p) => ProjectionDetailPage(
-        projection: p
+        projection: p,
+        settingsRepo: settingsRepo,
       )
     );
   }

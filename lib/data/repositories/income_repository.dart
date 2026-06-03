@@ -74,6 +74,16 @@ class IncomeRepository extends Repository<Income>{
     return joinedIncomeModels;
   }
 
+  Future<Map<String?, Income?>> getAllByName() async {
+    final allIncome = await getAll();
+
+    Map<String?, Income?>  map = { null: null };
+    for (Income income in allIncome){
+      map[income.name] = income;
+    }
+    return map;
+  }
+
   Future<List<({int pk, String name})>> getAllNames() async { 
     final idNameTuples = await dao.getAllNames();
     return idNameTuples;

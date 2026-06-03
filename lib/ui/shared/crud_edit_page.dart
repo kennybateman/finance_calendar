@@ -18,6 +18,7 @@ class CrudEditPage<T extends DomainModel<T>> extends StatefulWidget{
   final T Function() formToItem;
 
   final Future<void> Function() keyFieldChangedHandler;
+  final Future<void> Function() keyFieldChangedFailureHandler;
 
   const CrudEditPage({
     super.key,
@@ -29,6 +30,7 @@ class CrudEditPage<T extends DomainModel<T>> extends StatefulWidget{
     required this.buildItemForm,
     required this.formToItem,
     required this.keyFieldChangedHandler,
+    required this.keyFieldChangedFailureHandler,
   });
 
   @override
@@ -87,29 +89,28 @@ class CrudEditPageState<T extends DomainModel<T>> extends State<CrudEditPage<T>>
     try {
       await action();
     }
-    on EditException catch(e) {
-      if (!mounted) return;
-
-      setState(() {
-        errorMessage = e.toString();
-      });
-    }
     on Exception catch(e) {
-      if (!mounted) return;
-
-      setState(() {
-        errorMessage = e.toString();
-      });   
+      if (mounted){
+        setState(() {
+          errorMessage = e.toString();
+        });
+      }
+      return;
     }
 
-    /* once validation and db operation has passed, we can run projections. If they fail who cares. */    
-    if (!mounted) return;
     try {
-      setState((){ loading = true; });
+
+      if (mounted){
+        setState((){ loading = true; });
+      }
+
       await widget.keyFieldChangedHandler();
+
     }
     on GenerateProjectionsException catch(_){
-      /* nothing to do with exception, just ignore it */
+
+      await widget.keyFieldChangedFailureHandler();
+      
     }
 
     if (mounted) Navigator.pop(context);

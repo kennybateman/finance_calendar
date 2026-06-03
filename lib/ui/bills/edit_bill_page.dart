@@ -171,6 +171,7 @@ class EditBillPageState extends State<EditBillPage> {
     return CrudEditPage<Bill>(
       title: "${widget.bill.pk == null ? "Create" : "Edit"} Bill",
       keyFieldChangedHandler: widget.generateProjections.generateProjections,
+      keyFieldChangedFailureHandler: widget.generateProjections.clearProjections,
       item: widget.bill,
       createItem: widget.createNew,
       updateItem: widget.updateItem,

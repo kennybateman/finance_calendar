@@ -8,6 +8,8 @@ import 'package:finance_calendar/domain/models/account.dart';
 import 'package:finance_calendar/domain/use_cases/helpers.dart';
 import 'package:finance_calendar/domain/models/abstract_domain_model.dart';
 
+import 'dart:developer' as dev;
+
 class AccountsRepository implements Repository<Account>{
   late AccountsDAO dao;
   AccountsRepository(DatabaseWrapper db){
@@ -54,6 +56,8 @@ class AccountsRepository implements Repository<Account>{
       where a credit card pays its own interest.
     */
     final bool payFromThisAccount = tmpItem.payFromThisAccount;
+    dev.log("OKAY PEEKING");
+    dev.log(payFromThisAccount.toString());
     AccountsRow accountsRow = await dao.create(domainToDataModel(tmpItem));
     /* If payFromThisAccount, then take that pk save the record with it as the pay from account */
     if (payFromThisAccount){
@@ -80,6 +84,16 @@ class AccountsRepository implements Repository<Account>{
       }
     }
     return joinedAccountModels;
+  }
+
+  Future<Map<String?, Account?>> getAllByName() async {
+    final allAccounts = await getAll();
+
+    Map<String?, Account?>  map = { null: null };
+    for (Account account in allAccounts){
+      map[account.name] = account;
+    }
+    return map;
   }
 
   Future<List<({int pk, String name})>> getAllNames() async { 

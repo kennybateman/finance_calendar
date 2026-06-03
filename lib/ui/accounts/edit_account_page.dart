@@ -11,6 +11,8 @@ import '../shared/select_form_input.dart';
 import '../shared/text_form_input.dart';
 import '../shared/crud_edit_page.dart';
 
+import 'dart:developer' as dev;
+
 class EditAccountPage extends StatefulWidget{
   final GenerateProjectionsUseCase generateProjections;
   final Future<List<Account>> Function() getAll;
@@ -116,14 +118,18 @@ class EditAccountPageState extends State<EditAccountPage> {
     /* Database doesn't allow same names. Don't rely on that though. Catch it here */
     final newName = nameController.text;
 
+    dev.log(newName);
+
     if (newName == "") {
       throw EditException("Name cannot be empty.");
     }
 
     for(var account in allAccounts){
       /* allAccounts all have pks, widget.account might not, either way, we are allowed to change the name */
+      dev.log(account.name);
       if (account.pk == widget.account.pk) continue;
       if (newName == account.name){
+        dev.log("oh fuck");
         throw EditException("Existing account already uses this name");
       }
     }
@@ -143,6 +149,7 @@ class EditAccountPageState extends State<EditAccountPage> {
       dueDate: creditInterestDueDate,
       dueDateAnchorDay: creditInterestDueDate?.day,
       payFromAccountPk: creditInterestPayFromAccountPk,
+      payFromThisAccount: payFromThisAccount,
     );
   }
 
@@ -194,7 +201,7 @@ class EditAccountPageState extends State<EditAccountPage> {
   }
 
   String? getDefaultPayFromSelection(){
-    if (creditInterestPayFromAccountPk == widget.account.pk){
+    if (creditInterestPayFromAccountPk == widget.account.pk && widget.account.pk != null){
       return payFromThisAccountString;
     }
     return accountsByPk[creditInterestPayFromAccountPk]?.name;
@@ -225,6 +232,7 @@ class EditAccountPageState extends State<EditAccountPage> {
     return CrudEditPage<Account>(
       title: "${widget.account.pk == null ? "Create" : "Edit"} Account",
       keyFieldChangedHandler: widget.generateProjections.generateProjections,
+      keyFieldChangedFailureHandler: widget.generateProjections.clearProjections,
       item: widget.account,
       createItem: widget.createNew,
       updateItem: widget.updateItem,

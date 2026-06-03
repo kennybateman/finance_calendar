@@ -71,6 +71,16 @@ class BillsRepository extends Repository<Bill>{
     return joinedBillModels;
   }
 
+  Future<Map<String?, Bill?>> getAllByName() async {
+    final allBills = await getAll();
+
+    Map<String?, Bill?>  map = { null: null };
+    for (Bill bill in allBills){
+      map[bill.name] = bill;
+    }
+    return map;
+  }
+
   Future<List<(int, String)>> getAllNames() async { 
     final idNameTuples = await dao.getAllNames();
     return idNameTuples;

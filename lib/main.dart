@@ -14,34 +14,48 @@ import 'domain/use_cases/save_handler.dart';
 import 'domain/use_cases/feedback_handler.dart';
 // UI
 import 'ui/finance_calendar.dart';
+import 'ui/shared/error_screen_page.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    /* This is necessary for some reason */
+    WidgetsFlutterBinding.ensureInitialized();
 
-  /* SYSTEM */
-  final factory = getDatabaseFactory(); // does something different for desktop vs mobile
+    /* SYSTEM */
+    final factory = getDatabaseFactory(); // does something different for desktop vs mobile
 
-  /* SERVICES */
-  final database = DatabaseWrapper(dbFileName: 'finance_calendar.db', schema: DatabaseSchema(), dbFactory: factory);
-  final settings = SettingsWrapper();
-  await settings.init();
+    /* SERVICES */
+    final database = DatabaseWrapper(dbFileName: 'finance_calendar.db', schema: DatabaseSchema(), dbFactory: factory);
+    final settings = SettingsWrapper();
+    await settings.init();
 
-  /* Desktop usually have different save conventions than mobile */
-  Future<void> Function(Excel,String) saveHandler;
-  Future<void> Function(BuildContext) feedbackHandler;
-  if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
-    saveHandler = SaveHandler.saveExcelDesktop;
-    feedbackHandler = FeedbackHandler.feedbackHandlerDesktop;
-  }else{
-    saveHandler = SaveHandler.saveExcelMobile;
-    feedbackHandler = FeedbackHandler.feedbackHandlerMobile;
+    /* Desktop usually have different save conventions than mobile */
+    Future<void> Function(Excel,String) saveHandler;
+    Future<void> Function(BuildContext) feedbackHandler;
+    if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
+      saveHandler = SaveHandler.saveExcelDesktop;
+      feedbackHandler = FeedbackHandler.feedbackHandlerDesktop;
+    }else{
+      saveHandler = SaveHandler.saveExcelMobile;
+      feedbackHandler = FeedbackHandler.feedbackHandlerMobile;
+    }
+
+    /* APP and UI */
+    runApp(FinanceCalendar(
+      databaseWrapper: database, 
+      settingsWrapper: settings, 
+      saveHandler: saveHandler,
+      feedbackHandler: feedbackHandler,
+    ));
+
+  } on Exception catch(e){
+
+    runApp(
+      MaterialApp(
+        home: ErrorScreenPage(
+          message: e.toString()
+        )
+      )
+    );
   }
-
-  /* APP and UI */
-  runApp(FinanceCalendar(
-    databaseWrapper: database, 
-    settingsWrapper: settings, 
-    saveHandler: saveHandler,
-    feedbackHandler: feedbackHandler,
-  ));
 }

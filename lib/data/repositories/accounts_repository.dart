@@ -56,8 +56,6 @@ class AccountsRepository implements Repository<Account>{
       where a credit card pays its own interest.
     */
     final bool payFromThisAccount = tmpItem.payFromThisAccount;
-    dev.log("OKAY PEEKING");
-    dev.log(payFromThisAccount.toString());
     AccountsRow accountsRow = await dao.create(domainToDataModel(tmpItem));
     /* If payFromThisAccount, then take that pk save the record with it as the pay from account */
     if (payFromThisAccount){

@@ -185,6 +185,20 @@ class GenerateProjectionsUseCase {
     validateRecords();
   }
 
+  Future<void> generateMoreProjections() async {
+    
+
+
+    await loadAndValidateAllRecords();
+    await catchUpDueDates();
+
+    /* 
+      Need to load the latest not read only projection 
+      and use that as the starting input for the simulation.
+    */ 
+
+  }
+
   Future<void> generateProjections() async {
     developer.log("RUNNING PROJECTIONS!");
     await loadAndValidateAllRecords();

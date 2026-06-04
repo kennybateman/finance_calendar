@@ -24,6 +24,12 @@ abstract class DAO<T extends DatabaseRow> {
     return results.map(fromMap).toList();
   }
 
+  Future<List<T>> getAllAfter(int pk) async {
+    final db = dbWrapper.database;
+    final results = await db.query(tableName,  where: 'pk > ?', whereArgs: [pk]);
+    return results.map(fromMap).toList();
+  } 
+
   Future<T?> get(int pk) async {
     final db = dbWrapper.database;
     final results = await db.query(tableName,  where: 'pk = ?', whereArgs: [pk]);

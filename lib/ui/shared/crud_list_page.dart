@@ -19,6 +19,9 @@ class CrudListPage<T extends DomainModel<T>> extends StatefulWidget {
 
   final SettingsRepository settingsRepo;
 
+  final Future<void> Function()? scrollToBottomHandler;
+  final Future<List<T>> Function(int)? getMoreAfter;
+
   const CrudListPage({
     super.key,
     this.preloadHook,
@@ -32,6 +35,8 @@ class CrudListPage<T extends DomainModel<T>> extends StatefulWidget {
     this.editPage,
     this.detailPage,
     required this.settingsRepo,
+    this.scrollToBottomHandler,
+    this.getMoreAfter,
   });
 
   @override
@@ -40,6 +45,7 @@ class CrudListPage<T extends DomainModel<T>> extends StatefulWidget {
 
 class CrudListPageState<T extends DomainModel<T>> extends State<CrudListPage<T>> {
   late bool loading = true;
+  late bool loadingMore = false;
   late String statusMessage = "";
   late List<T> items = [];
   
@@ -47,11 +53,56 @@ class CrudListPageState<T extends DomainModel<T>> extends State<CrudListPage<T>>
   late double startScale = widget.settingsRepo.getSettings().fontSize;
   late double scale = startScale;
 
+  final ScrollController scrollController = ScrollController();
+
   @override
   void initState(){
     super.initState();
+    scrollController.addListener(onScroll);
     loadItems(); // async call
   }
+
+  @override
+  void dispose() {
+    scrollController.dispose();
+    super.dispose();
+  }
+
+  void onScroll() async {
+    /* only on scroll event rn is a bottom handler */
+    if (widget.scrollToBottomHandler != null){
+      final current = scrollController.position.pixels;
+      final bottom = scrollController.position.maxScrollExtent;
+      if (current >= bottom - 200 && !loading){
+        await bottomHandlerAndLoadMore();
+      }
+    }
+  }
+
+  Future<void> bottomHandlerAndLoadMore() async {
+    setState((){
+      loadingMore = true;
+    });
+
+    try {
+      /* this will generate more items, but not return them */
+      await widget.scrollToBottomHandler!();   
+    } 
+    on Exception catch(exception){
+      setState((){
+        statusMessage = exception.toString();
+      });      
+    }
+
+    final lastItem = items.last;
+    List<T> allAfterLast = await widget.getMoreAfter!(lastItem.pk!); 
+
+    setState((){
+      items.addAll(allAfterLast);
+      loadingMore = false;
+    });   
+  }
+
 
   Future<void> loadItems() async {
     setState((){ 
@@ -99,6 +150,7 @@ class CrudListPageState<T extends DomainModel<T>> extends State<CrudListPage<T>>
   @override
   Widget build(BuildContext context) {
     final error = statusMessage != "";
+    final getMoreEnabled = widget.getMoreAfter != null;
 
     final appBar = AppBar(
       title: Text(statusMessage, 
@@ -135,8 +187,19 @@ class CrudListPageState<T extends DomainModel<T>> extends State<CrudListPage<T>>
     final circleWaiting = const Center(child: CircularProgressIndicator());
 
     final pageBody = ListView.builder(
-        itemCount: items.length,
+        controller: scrollController,
+        itemCount: items.length + (getMoreEnabled ? 1 : 0),
         itemBuilder: (context, index) {
+          /* if last item, then show circular progress thingy */
+          if (index == items.length && getMoreEnabled) {
+            return const Padding(
+              padding: EdgeInsets.all(16),
+              child: Center(
+                child: CircularProgressIndicator(),
+              ),
+            );
+          }
+          /* otherwise make item */
           final item = items[index];
           return ListTile(
             title: widget.buildTileWidget(item, scale), 

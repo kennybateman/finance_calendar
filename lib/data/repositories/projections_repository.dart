@@ -159,6 +159,13 @@ class ProjectionsRepository implements Repository<Projection> {
   }
 
 
+  Future<List<ProjectionReadModel>> getAllReadModelsAfter(int pk) async{
+    var projectionsRows = await projectionsDao.getAllAfter(pk);
+    var models = await getSupportingRecordsAndMakeDomainModel(projectionsRows);
+    return models;
+  }
+
+
   Future<List<ProjectionReadModel>> getAllReadModels() async {
     var projectionsRows = await projectionsDao.getAll();
     var models = await getSupportingRecordsAndMakeDomainModel(projectionsRows);

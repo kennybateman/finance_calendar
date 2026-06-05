@@ -12,7 +12,7 @@ class ExportProjections {
   );
 
   Future<Excel> backupDataToExcel() async {
-    var projections = await projectionsRepo.getAllReadModels();
+    var projections = await projectionsRepo.getAll();
     var accountNames = projections.first.accountNames;
 
     final Excel excel = Excel.createExcel();

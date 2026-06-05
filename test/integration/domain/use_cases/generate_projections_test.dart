@@ -88,14 +88,14 @@ void main() async {
 
     test('Domain Object Graph can be set up and saved and viewed as read only models.', () async {
       await generateProjectionsUseCase.generateProjections();
-      var readOnlyModels = await projectionsRepo.getAllReadModels();
-      expect(readOnlyModels.first.accountProjectionStrings().length, 2);
-      expect(readOnlyModels.first.accountProjectionStrings().first, "some account: \$1699.09");
+      var readOnlyModels = await projectionsRepo.getAll();
+      expect(readOnlyModels.first.accountProjectionStrings.length, 2);
+      expect(readOnlyModels.first.accountProjectionStrings.first, "some account: \$1699.09");
 
-      expect(readOnlyModels.first.transactionProjectionStrings().length, 3);
-      expect(readOnlyModels.first.transactionProjectionStrings()[0], "some credit account interest: \$160.91");
-      expect(readOnlyModels.first.transactionProjectionStrings()[1], "some bill: \$50.00");
-      expect(readOnlyModels.first.transactionProjectionStrings()[2], "some income: \$900.00");
+      expect(readOnlyModels.first.transactionProjectionStrings.length, 3);
+      expect(readOnlyModels.first.transactionProjectionStrings[0], "some credit account interest: \$160.91");
+      expect(readOnlyModels.first.transactionProjectionStrings[1], "some bill: \$50.00");
+      expect(readOnlyModels.first.transactionProjectionStrings[2], "some income: \$900.00");
     });
   });
 
@@ -152,14 +152,14 @@ void main() async {
 
     test('Due date should have been caught up, and deducted bill from account.', () async {
       await generateProjectionsUseCase.generateProjections();
-      var readOnlyModels = await projectionsRepo.getAllReadModels();
+      var readOnlyModels = await projectionsRepo.getAll();
 
-      expect(readOnlyModels.first.accountProjectionStrings().length, 1);
+      expect(readOnlyModels.first.accountProjectionStrings.length, 1);
       /* THIS CURRENTLY FAILS */
-      expect(readOnlyModels.first.accountProjectionStrings().first, "some account: \$960.00");
+      expect(readOnlyModels.first.accountProjectionStrings.first, "some account: \$960.00");
 
-      expect(readOnlyModels.first.transactionProjectionStrings().length, 1);
-      expect(readOnlyModels.first.transactionProjectionStrings()[0], "some bill: \$50.00");
+      expect(readOnlyModels.first.transactionProjectionStrings.length, 1);
+      expect(readOnlyModels.first.transactionProjectionStrings[0], "some bill: \$50.00");
     });
   });
 

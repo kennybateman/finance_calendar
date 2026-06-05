@@ -1,5 +1,8 @@
 // Data
 import 'package:collection/collection.dart';
+import 'package:finance_calendar/domain/models/account_projection.dart';
+import 'package:finance_calendar/domain/models/bill_projection.dart';
+import 'package:finance_calendar/domain/models/income_projection.dart';
 import 'package:finance_calendar/domain/use_cases/helpers.dart';
 
 import '../../data/repositories/projections_repository.dart';
@@ -24,6 +27,8 @@ class GenerateProjectionsUseCase {
     this.incomeRepo, 
     this.projectionsRepo
   );
+
+  final int projectionsPerGeneration = 90;
 
   late List<Account> allAccounts;
   late Map<int?, Account?> accountsByPk;
@@ -185,58 +190,91 @@ class GenerateProjectionsUseCase {
     validateRecords();
   }
 
-  Future<void> generateMoreProjections() async {
-    
-
-
-    await loadAndValidateAllRecords();
-    await catchUpDueDates();
-
-    /* 
-      Need to load the latest not read only projection 
-      and use that as the starting input for the simulation.
-    */ 
-
+  DateTime getEarliestAccountReportDate(){
+    return allAccounts.map((a) => a.balanceDate!).toList().sorted((date1, date2) => date1.compareTo(date2)).firstOrNull!;
   }
 
-  Future<void> generateProjections() async {
-    developer.log("RUNNING PROJECTIONS!");
+
+  Future<void> generateInitialProjections() async {
     await loadAndValidateAllRecords();
     await catchUpDueDates();
 
-    /* just before proceeding, clear the projections table */
     await clearProjections();
 
-    /* SET UP ALGORITHM */
-    /* Problem 1: different balance report dates... 
-       Decision: before balance report date, account is treated as nonexistant.
-       Consequence: bills or income simply will not take/give to an account before that date (potential phantom transactions)
-       Also: account with earliest report date will be the projection start date.
-    */
-    earliestAccountReportDate = allAccounts.map((a) => a.balanceDate!).toList().sorted((a, b) => a.compareTo(b)).firstOrNull!;
+    await generateProjections();
+  }
 
-    /* BEGIN ALGORITHM! ...? */
-    final start = earliestAccountReportDate;
-    final end = DateTime(start.year, start.month + 2, start.day);  // try 1 month of sim
+  Future<void> generateMoreProjections() async { 
+    await loadAndValidateAllRecords();
+    await catchUpDueDates();
 
-    DateTime projectionDate = start;
-    Projection? previousDaysProjection;
+    /* This needs to catch up Due Dates all the way to the last previous projection */
+    /* Or this needs to be done in the core algorithm */
+
+    await generateProjections();
+  }
+
+  /// This is the core algorithm.
+  Future<void> generateProjections() async {
+    developer.log("RUNNING PROJECTIONS!");
+
+    Projection? previousDaysProjection = await projectionsRepo.getLast();
+    
+    // Projection date depends on whether we are running initially or subsquently
+    DateTime projectionDate;
+    if (previousDaysProjection != null){
+      projectionDate = DateTime(
+        previousDaysProjection.date.year, 
+        previousDaysProjection.date.month, 
+        previousDaysProjection.date.day + 1);
+    }
+    else{
+      projectionDate = getEarliestAccountReportDate();
+    }
+
+    final end = DateTime(
+      projectionDate.year, 
+      projectionDate.month, 
+      projectionDate.day + projectionsPerGeneration
+    );
+
+    /* These are just mutable copies that allow tracking complex due dates, like biweekly */
+    List<Account> simulatedAccounts = allAccounts;
+    List<Bill> simulatedBills = allBills;
+    List<Income> simulatedIncome = allIncome;
+
     while (projectionDate.isBefore(end)) { 
-      var projectionForDay = Projection(date: projectionDate);
+
+      List<AccountProjection> accountProjections = [];
+      List<BillProjection> billProjections = [];
+      List<IncomeProjection> incomeProjections = [];
 
       for(Account account in allAccounts){
-        /* initialize or carry over balance from previous day */
-        final previousBalance = previousDaysProjection != null ? previousDaysProjection.accountProjectionsByAccountPk![account.pk]!.projectedBalance : account.balance;
+
+        int previousBalance;
+        if (previousDaysProjection != null){
+          previousBalance = previousDaysProjection.accountProjectionsByAccountPk()![account.pk]!.projectedBalance;
+        }
+        else{
+          previousBalance = account.balance;
+        }
 
         final isCreditAccount = account.accountType == 'credit';
+
+        /* This will be mutated... */
         var newBalance = previousBalance;
         
+        /* Make Bill Projections for interest payments on credit accounts */
+        for(int i=0; i < simulatedAccounts.length; i++){
+          Account creditAccount = simulatedAccounts[i];
 
-        /* Make Bill Projections for interest payments */
-        for(var i=0; i < allAccounts.length; i++){
-          var creditAccount = allAccounts[i];
-          if (creditAccount.accountType == 'credit' && creditAccount.dueDate == projectionDate && creditAccount.payFromAccountPk == account.pk){
-            var billAmount = calculateCompoundInterest(previousBalance, projectionDate);
+          // Only credit accounts have interest payments...
+          if (creditAccount.accountType != 'credit') continue;
+
+          // Interest must be due _and_ for this account
+          if (creditAccount.dueDate == projectionDate && creditAccount.payFromAccountPk == account.pk){
+
+            final billAmount = calculateCompoundInterest(previousBalance, projectionDate);
             if (isCreditAccount) {
               newBalance += billAmount;
             }
@@ -244,16 +282,20 @@ class GenerateProjectionsUseCase {
               newBalance -= billAmount;
             }
 
-            allAccounts[i] = creditAccount.updateValue(dueDate: findNextDueDate(creditAccount.dueDate!, creditAccount.dueFrequency, creditAccount.dueDateAnchorDay!));
+            // Use simulated accounts to track the due date
+            final nextDueDate = findNextDueDate(creditAccount.dueDate!, creditAccount.dueFrequency, creditAccount.dueDateAnchorDay!);
+            simulatedAccounts[i] = creditAccount.updateValue(dueDate: nextDueDate);
 
-            projectionForDay.addBillProjection(BillProjection(creditAccountPk: creditAccount.pk, projectedAmount: billAmount));
+            billProjections.add(BillProjection(creditAccountPk: creditAccount.pk, projectedAmount: billAmount));
           }
         }
 
         /* Regular bill projections */
-        for(var i = 0; i < allBills.length; i++){
-          Bill bill = allBills[i];
+        for(int i = 0; i < simulatedBills.length; i++){
+          Bill bill = simulatedBills[i];
+
           if (bill.dueDate == projectionDate && bill.payFromAccountPk == account.pk){
+
             if (isCreditAccount) {
               newBalance += bill.amount;
             }
@@ -261,16 +303,19 @@ class GenerateProjectionsUseCase {
               newBalance -= bill.amount;
             }
 
-            allBills[i] = bill.updateValue(dueDate: findNextDueDate(bill.dueDate!, bill.dueFrequency, bill.dueDateAnchorDay!));
+            simulatedBills[i] = bill.updateValue(dueDate: findNextDueDate(bill.dueDate!, bill.dueFrequency, bill.dueDateAnchorDay!));
 
-            projectionForDay.addBillProjection(BillProjection(billPk: bill.pk!, projectedAmount: bill.amount));
+            billProjections.add(BillProjection(billPk: bill.pk!, projectedAmount: bill.amount));
           }
         }
 
         /* Income projections */
-        for(var i = 0; i < allIncome.length; i++){
-          Income income = allIncome[i];
+        for(var i = 0; i < simulatedIncome.length; i++){
+
+          Income income = simulatedIncome[i];
+
           if (income.dueDate == projectionDate && income.payToAccountPk == account.pk){
+
             if (isCreditAccount){
               newBalance -= income.amount;
             }
@@ -278,20 +323,30 @@ class GenerateProjectionsUseCase {
               newBalance += income.amount;
             }
 
-            allIncome[i] = income.updateValue(dueDate: findNextDueDate(income.dueDate!, income.dueFrequency, income.dueDateAnchorDay!));
+            simulatedIncome[i] = income.updateValue(dueDate: findNextDueDate(income.dueDate!, income.dueFrequency, income.dueDateAnchorDay!));
 
-            projectionForDay.addIncomeProjection(IncomeProjection(incomePk: income.pk!, projectedAmount: income.amount));
+            incomeProjections.add(IncomeProjection(incomePk: income.pk!, projectedAmount: income.amount));
           }
         } 
 
-        /* After having modified the previous balance, create the projection with the result */
-        projectionForDay.addAccountProjection(AccountProjection(projectedBalance: newBalance, accountPk: account.pk!));
+        /* Finally, create the account projection with the final balance for the day */
+        accountProjections.add(AccountProjection(projectedBalance: newBalance, accountPk: account.pk!, account: account));
       }
+
+      /* Now take all of the data for the day and create the projection model */
+      var projectionForDay = Projection(
+        date: projectionDate,
+        accountProjections: accountProjections,
+        billProjections: billProjections,
+        incomeProjections: incomeProjections,
+      );
+      
+      /* commit projection to the DB */
+      await projectionsRepo.createNewReturnVoid(projectionForDay);
 
       /* remember this for tomorrow */    
       previousDaysProjection = projectionForDay;
-      /* commit projection to the DB */
-      await projectionsRepo.createNewReturnVoid(projectionForDay);
+
       /* iterate to next day */
       projectionDate = projectionDate.add(const Duration(days: 1));
     }

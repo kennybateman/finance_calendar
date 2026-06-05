@@ -5,7 +5,7 @@ import '../../data/repositories/projections_repository.dart';
 // DOMAIN
 import 'package:finance_calendar/domain/use_cases/generate_projections.dart';
 import 'package:finance_calendar/domain/use_cases/helpers.dart';
-import '../../domain/models/projection_read_only.dart';
+import '../../domain/models/projection.dart';
 // UI
 import 'package:table_calendar/table_calendar.dart';
 
@@ -24,9 +24,9 @@ class CalendarPage extends StatefulWidget {
 
 class CalendarPageState extends State<CalendarPage> {
   late DateTime selectedDay;
-  late ProjectionReadModel? projectionForDay;
-  late List<ProjectionReadModel> projectionsForMonth;
-  late Map<String,ProjectionReadModel> projectionsForMonthByDate;
+  late Projection? projectionForDay;
+  late List<Projection> projectionsForMonth;
+  late Map<String,Projection> projectionsForMonthByDate;
 
   @override
   void initState(){
@@ -40,7 +40,7 @@ class CalendarPageState extends State<CalendarPage> {
   }
 
   Future<void> loadItems() async {
-    final forMonth = await widget.projectionsRepo.getReadModelsForDateRange(startOfMonth(selectedDay), startOfNextMonth(selectedDay));
+    final forMonth = await widget.projectionsRepo.getForDateRange(startOfMonth(selectedDay), startOfNextMonth(selectedDay));
     final byDate = mapReadOnlyProjectionsByDateString(forMonth);
     final forDay = byDate[dateToStringForDB(selectedDay)];
     setState((){
@@ -85,7 +85,7 @@ class CalendarPageState extends State<CalendarPage> {
 
   /* If day in calendar has events, mark it with a graphic */
   List<String> eventLoader(DateTime day) {
-    return projectionsForMonthByDate[dateToStringForDB(day)]?.transactionProjectionStrings() ?? [];
+    return projectionsForMonthByDate[dateToStringForDB(day)]?.transactionProjectionStrings ?? [];
   }
 
   @override

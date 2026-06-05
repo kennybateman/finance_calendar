@@ -25,8 +25,8 @@ int dollarsStringToCurrencyCents(String dollarsString){
   return dollars * 100 + cents;
 }
 
-String? dateToStringForDB(DateTime? date){
-  if (date == null) return null;
+String dateToStringForDB(DateTime? date){
+  if (date == null) return '';
   return DateFormat('yyyy-MM-dd').format(date);
 }
 

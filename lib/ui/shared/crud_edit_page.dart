@@ -3,7 +3,6 @@ import 'package:finance_calendar/domain/use_cases/generate_projections.dart';
 import 'package:flutter/material.dart';
 // DOMAIN
 import 'package:finance_calendar/domain/models/abstract_domain_model.dart';
-import 'package:finance_calendar/domain/use_cases/edit_exception.dart';
 // UI
 
 class CrudEditPage<T extends DomainModel<T>> extends StatefulWidget{

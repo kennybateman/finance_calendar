@@ -1,4 +1,8 @@
 /* DATA LAYER */
+import 'package:finance_calendar/data/repositories/accounts_repository.dart';
+import 'package:finance_calendar/data/repositories/bills_repository.dart';
+import 'package:finance_calendar/data/repositories/income_repository.dart';
+
 import '../services/database_wrapper.dart';
 /* daos */
 import '../daos/projections_dao.dart';
@@ -19,7 +23,9 @@ import '../models/income_row.dart';
 import 'abstract_repository.dart';
 /* DOMAIN LAYER */
 import 'package:finance_calendar/domain/models/projection.dart';
-import 'package:finance_calendar/domain/models/projection_read_only.dart';
+import 'package:finance_calendar/domain/models/account_projection.dart';
+import 'package:finance_calendar/domain/models/bill_projection.dart';
+import 'package:finance_calendar/domain/models/income_projection.dart';
 import 'package:finance_calendar/domain/use_cases/helpers.dart';
 
 //import 'dart:developer' as developer;
@@ -41,12 +47,11 @@ class ProjectionsRepository implements Repository<Projection> {
     incomeDao = IncomeDAO(dbWrapper: db);
   }
 
-  Projection dataToDomainModel(ProjectionsRow row){
-    return Projection(pk: row.pk, date: stringToDate(row.date)!);
-  }
-
   ProjectionsRow domainToDataModel(Projection p){
-    return ProjectionsRow(pk: p.pk, date: dateToStringForDB(p.date)!);
+    return ProjectionsRow(
+      pk: p.pk, 
+      date: dateToStringForDB(p.date)
+    );
   }
 
   AccountProjectionsRow accountProjectionDomainToDataModel(AccountProjection ap){
@@ -77,218 +82,156 @@ class ProjectionsRepository implements Repository<Projection> {
     );
   }
 
-  /* 
-    I don't want the projection database tables to be mutable at all.
-    So the developer shouldn't be able to do anything to mutate Projection Models 
-    after having been initially saved. Once saved,
-    only the ReadOnly versions should ever be fetched from the repo.
-    When needing to re-run the projection algorithm, the entire database should be cleared
-    and repopulated from scratch. Don't even use delete, have the dao specify a clear table method.
-  */
+  Future<void> createNewReturnVoid(Projection projection) async {
+    final int projectionPk = (await projectionsDao.create(domainToDataModel(projection))).pk!;
 
-  Future<void> createNewReturnVoid(Projection tmpItem) async {
-    /* precheck before potentially creating anything */
-    if (tmpItem.pk != null) throw Exception("Projection already saved!");
-    if (tmpItem.accountProjections.any((ap) => ap.pk != null)) throw Exception("Projection already saved!");
-    if (tmpItem.billProjections.any((bp) => bp.pk != null)) throw Exception("Projection already saved!");
-    if (tmpItem.incomeProjections.any((ip) => ip.pk != null)) throw Exception("Projection already saved!");
-
-    ProjectionsRow projectionsRow = await projectionsDao.create(domainToDataModel(tmpItem));
-
-    List<AccountProjectionsRow> accountProjectionsRows = [];
-    for(AccountProjection accountProjection in tmpItem.accountProjections){
-      /* after having saved projections, we have a pk, add that to each linked model before saving */
-      AccountProjection linked = accountProjection.updateValues(projectionPk: projectionsRow.pk);
-      AccountProjectionsRow accountProjectionsRow = await accountProjectionsDao.create(accountProjectionDomainToDataModel(linked));
-      accountProjectionsRows.add(accountProjectionsRow);
+    for(var accountProjection in projection.accountProjections){
+      await accountProjectionsDao.create(
+        accountProjectionDomainToDataModel(
+          accountProjection.updateValues(projectionPk: projectionPk)
+        )
+      );
     }
 
-    List<TransactionProjectionsRow> transactionProjectionsRows = [];
-    for(BillProjection billProjection in tmpItem.billProjections){
-      BillProjection linked = billProjection.updateValues(projectionPk: projectionsRow.pk);
-      TransactionProjectionsRow transactionProjectionsRow = await transactionProjectionsDao.create(billProjectionDomainToDataModel(linked));
-      transactionProjectionsRows.add(transactionProjectionsRow);
+    for(var billProjection in projection.billProjections){
+      await transactionProjectionsDao.create(
+        billProjectionDomainToDataModel(
+          billProjection.updateValues(projectionPk: projectionPk)
+        )
+      );
     }
-    for(IncomeProjection incomeProjection in tmpItem.incomeProjections){
-      IncomeProjection linked = incomeProjection.updateValues(projectionPk: projectionsRow.pk);
-      TransactionProjectionsRow transactionProjectionsRow = await transactionProjectionsDao.create(incomeProjectionDomainToDataModel(linked));
-      transactionProjectionsRows.add(transactionProjectionsRow);
+
+    for(var incomeProjection in projection.incomeProjections){
+      await transactionProjectionsDao.create(
+        incomeProjectionDomainToDataModel(
+          incomeProjection.updateValues(projectionPk: projectionPk)
+        )
+      );
     }
   }
 
-  Future<ProjectionReadModel?> getReadModelForDate(DateTime datetime) async {
-    final projectionRow = await projectionsDao.getByDate(dateToStringForDB(datetime)!);
-    if (projectionRow == null) return null;
+  Future<Projection?> getForDate(DateTime datetime) async {
+    final projectionsRow = await projectionsDao.getByDate(dateToStringForDB(datetime));
+    if (projectionsRow == null) return null;
+    var models = await joinSupportingRecords([projectionsRow]);
+    return models.first;
+  }
 
-    var accountProjectionsRows = await accountProjectionsDao.getByProjectionPk(projectionRow.pk!);
-    var transactionProjectionsRows = await transactionProjectionsDao.getByProjectionPk(projectionRow.pk!);
-    var accountsRows = await accountsDao.getAll();
-    var billsRows = await billsDao.getAll();
-    var incomeRows = await incomeDao.getAll();
+  Future<List<Projection>> getAllAfter(int pk) async{
+    var projectionsRows = await projectionsDao.getAllAfter(pk);
+    var models = await joinSupportingRecords(projectionsRows);
+    return models;
+  }
 
+  @override
+  Future<List<Projection>> getAll() async {
+    var projectionsRows = await projectionsDao.getAll();
+    var models = await joinSupportingRecords(projectionsRows);
+    return models;
+  }
+
+  Future<List<Projection>> getForDateRange(DateTime start, DateTime end) async {
+    var projectionsRows = await projectionsDao.getByDateRange(dateToStringForDB(start), dateToStringForDB(end));
+    var models = await joinSupportingRecords(projectionsRows);
+    return models;
+  }
+
+  Future<Projection?> getLast() async {
+    var projectionsRow = await projectionsDao.getLast();
+    if(projectionsRow == null) return null;
+    var models = await joinSupportingRecords([projectionsRow]);
+    return models.first;
+  }
+
+  Future<List<Projection>> joinSupportingRecords(List<ProjectionsRow> projectionsRows) async {
+
+    /* get supporting data models */
+
+    var projectionPks = projectionsRows.map((pr) => pr.pk!).toList();
+    var accountProjectionsRows = await accountProjectionsDao.getMultipleByInt('projection_pk', projectionPks);
+    var transactionProjectionsRows = await transactionProjectionsDao.getMultipleByInt('projection_pk', projectionPks);
+
+    var accountPks = accountProjectionsRows.map((apr) => apr.account_pk).toList();
+    var accountsRows = await accountsDao.getMultiple(accountPks);
+
+    var billPks = transactionProjectionsRows.where((tpr) => tpr.bill_pk != null).map((tpr) => tpr.bill_pk!).toList();
+    var billsRows = await billsDao.getMultiple(billPks);
+
+    var incomePks = transactionProjectionsRows.where((tpr) => tpr.income_pk != null).map((tpr) => tpr.income_pk!).toList();
+    var incomeRows = await incomeDao.getMultiple(incomePks);
+
+    /* turn them into domain models */
+
+    var accountsByPk = accountsRows.mapByPk();
     var billsByPK = billsRows.mapByPk();
     var incomeByPk = incomeRows.mapByPk();
 
-    var accountProjectionsByProjectionPk = mapAccountProjectionsByProjectionPk(accountProjectionsRows);
-    var transactionProjectionsByProjectionPk = mapTransactionProjectionsByProjectionPk(transactionProjectionsRows);
+    var joinedAccProjections = accountProjectionsRows
+      .map((ap) => accountProjectionDataToDomainModel(ap, accountsByPk[ap.account_pk]!));
 
-    List<AccountProjectionsRow> accountProjectionRows = accountProjectionsByProjectionPk[projectionRow.pk] ?? [];
-    List<TransactionProjectionsRow> transactionProjectionRows = transactionProjectionsByProjectionPk[projectionRow.pk] ?? [];
+    var joinedBillProjections = transactionProjectionsRows
+      .where((tpr) => tpr.bill_pk != null || tpr.account_pk != null)
+      .map((bp) => billProjectionDataToDomainModel(bp, billsByPK[bp.bill_pk]!, accountsByPk[bp.account_pk]!));
 
-    // Get bills for those projections
-    List<BillsRow> billRows = [];
-    // Get income for those projections
-    List<IncomeRow> incomeRows2 = [];
-    for(var row in transactionProjectionRows){
-      if (row.bill_pk != null){
-        billRows.add(billsByPK[row.bill_pk]!);
-      }
-      if (row.income_pk != null){
-        incomeRows2.add(incomeByPk[row.income_pk]!);
-      }
+    var joinedIncomeProjections = transactionProjectionsRows
+      .where((tpr) => tpr.bill_pk != null || tpr.account_pk != null)
+      .map((ip) => incomeProjectionDataToDomainModel(ip, incomeByPk[ip.income_pk]!));
+
+
+    var accountProjectionsByProjectionPk = mapAccountProjectionsByProjectionPk(joinedAccProjections.toList());
+    var billProjectionsByProjectionPk = mapBillProjectionsByProjectionPk(joinedBillProjections.toList());
+    var incomeProjectionsByProjectionPk = mapIncomeProjectionsByProjectionPk(joinedIncomeProjections.toList());
+
+    List<Projection> fullyJoinedModels = [];
+    for(ProjectionsRow projectionsRow in projectionsRows){
+      fullyJoinedModels.add(
+        dataToReadOnlyModel(
+          projectionsRow,
+          accountProjectionsByProjectionPk[projectionsRow.pk]!,
+          billProjectionsByProjectionPk[projectionsRow.pk] ?? [],
+          incomeProjectionsByProjectionPk[projectionsRow.pk] ?? [],
+        )
+      );
     }
+    return fullyJoinedModels.toList();
+  }
 
-    return dataToReadOnlyModel(
-      projectionRow,
-      accountProjectionRows,
-      accountsRows,
-      transactionProjectionRows,
-      billRows,
-      incomeRows2,
+  Projection dataToReadOnlyModel(ProjectionsRow pr, List<AccountProjection> aps, List<BillProjection> bps, List<IncomeProjection> ips){
+    return Projection(
+      pk: pr.pk!,
+      date: stringToDate(pr.date)!,
+      accountProjections: aps,
+      billProjections: bps,
+      incomeProjections: ips,
     );
   }
 
-
-  Future<List<ProjectionReadModel>> getAllReadModelsAfter(int pk) async{
-    var projectionsRows = await projectionsDao.getAllAfter(pk);
-    var models = await getSupportingRecordsAndMakeDomainModel(projectionsRows);
-    return models;
+  AccountProjection accountProjectionDataToDomainModel(AccountProjectionsRow apr, AccountsRow ar){
+    return AccountProjection(
+      projectionPk: apr.projection_pk, 
+      projectedBalance:  apr.projected_balance,
+      accountPk: apr.account_pk, 
+      account: AccountsRepository.dataToDomainModel(ar)
+    );
   }
 
-
-  Future<List<ProjectionReadModel>> getAllReadModels() async {
-    var projectionsRows = await projectionsDao.getAll();
-    var models = await getSupportingRecordsAndMakeDomainModel(projectionsRows);
-    return models;
+  BillProjection billProjectionDataToDomainModel(TransactionProjectionsRow apr, BillsRow? br, AccountsRow? ar){
+    return BillProjection(
+      projectionPk: apr.projection_pk, 
+      projectedAmount:  apr.projected_amount, 
+      billPk: apr.bill_pk,
+      bill: br != null ? BillsRepository.dataToDomainModel(br) : null,
+      creditAccountPk: apr.account_pk,
+      creditAccount: ar != null ? AccountsRepository.dataToDomainModel(ar) : null,
+    );
   }
 
-
-  Future<List<ProjectionReadModel>> getSupportingRecordsAndMakeDomainModel(List<ProjectionsRow> projectionsRows) async {
-    var accountProjectionsRows = await accountProjectionsDao.getAll();
-    var transactionProjectionsRows = await transactionProjectionsDao.getAll();
-    var accountsRows = await accountsDao.getAll();
-    var billsRows = await billsDao.getAll();
-    var incomeRows = await incomeDao.getAll();
-
-    var accountProjectionsByProjectionPk = mapAccountProjectionsByProjectionPk(accountProjectionsRows);
-    var transactionProjectionsByProjectionPk = mapTransactionProjectionsByProjectionPk(transactionProjectionsRows);
-
-    // var accountsByPk = mapByPk(accountsRows);
-    var billsByPK = billsRows.mapByPk();
-    var incomeByPk = incomeRows.mapByPk();
-
-    List<ProjectionReadModel> readModels = [];
-    for(ProjectionsRow projectionRow in projectionsRows){
-
-      // Get account projections for this projection
-      List<AccountProjectionsRow> accountProjectionRows = accountProjectionsByProjectionPk[projectionRow.pk] ?? [];
-
-      // Get transaction projections for this projection
-      List<TransactionProjectionsRow> transactionProjectionRows = transactionProjectionsByProjectionPk[projectionRow.pk] ?? [];
-
-      // Get bills for those projections
-      List<BillsRow> billRows = [];
-      // Get income for those projections
-      List<IncomeRow> incomeRows = [];
-      for(var row in transactionProjectionRows){
-        if (row.bill_pk != null){
-          billRows.add(billsByPK[row.bill_pk]!);
-        }
-        if (row.income_pk != null){
-          incomeRows.add(incomeByPk[row.income_pk]!);
-        }
-      }
-
-      // Pass precisely the relevant rows, no more or less.
-      var readonlyModel = dataToReadOnlyModel(
-        projectionRow,
-        accountProjectionRows,
-        accountsRows,
-        transactionProjectionRows,
-        billRows,
-        incomeRows,
-        );
-      readModels.add(readonlyModel);
-    }
-    return readModels.toList();
-  }
-
-
-  /* I have to think about bulk operations vs singular ones. */
-  Future<List<ProjectionReadModel>> getReadModelsForDateRange(DateTime start, DateTime end) async {
-    var projectionsRows = await projectionsDao.getByDateRange(dateToStringForDB(start)!, dateToStringForDB(end)!);
-    var models = await getSupportingRecordsAndMakeDomainModel(projectionsRows);
-    return models;
-  }
-
-
-  ProjectionReadModel dataToReadOnlyModel(
-    ProjectionsRow projectionsRow, 
-    List<AccountProjectionsRow> accountProjectionsRows,
-    List<AccountsRow> accountsRows,
-    List<TransactionProjectionsRow> transactionProjectionsRows,
-    List<BillsRow> billsRows,
-    List<IncomeRow> incomeRows){
-
-    /* get all info from accounts and their projections */
-    var accountsRowsByPk = accountsRows.mapByPk();
-    List<String> accountNames = [];
-    List<int> accountBalances = [];
-    for (final accountProjection in accountProjectionsRows){
-      final accountName = accountsRowsByPk[accountProjection.account_pk]!.name;
-      accountNames.add(accountName);
-
-      final projectedAmount = accountProjection.projected_balance;
-      accountBalances.add(projectedAmount);
-    }
-
-    /* get all info from transactions, and their projections */
-    var billsRowsByPk = billsRows.mapByPk();
-    var incomeRowsByPk = incomeRows.mapByPk();
-    List<String> transactionNames = [];
-    List<int> transactionAmounts = [];
-    for (var transactionProjection in transactionProjectionsRows){
-      if (transactionProjection.bill_pk != null){
-        final billName = billsRowsByPk[transactionProjection.bill_pk]!.name;
-        transactionNames.add(billName);
-
-        final projectedAmount = transactionProjection.projected_amount;
-        transactionAmounts.add(projectedAmount);
-      }
-
-      else if (transactionProjection.income_pk != null){
-        final incomeName = incomeRowsByPk[transactionProjection.income_pk]!.name;
-        transactionNames.add(incomeName);
-
-        final projectedAmount = transactionProjection.projected_amount;
-        transactionAmounts.add(projectedAmount);
-      }
-      
-      else if (transactionProjection.account_pk != null){
-        final interestName = "${accountsRowsByPk[transactionProjection.account_pk]!.name} interest";
-        transactionNames.add(interestName);
-        final interestAmount = transactionProjection.projected_amount;
-        transactionAmounts.add(interestAmount);
-      }
-    }
-
-    return ProjectionReadModel(
-      pk: projectionsRow.pk!,
-      date: stringToDate(projectionsRow.date)!,
-      accountNames: accountNames,
-      accountBalances: accountBalances,
-      transactionNames: transactionNames,
-      transactionAmounts: transactionAmounts,
+  IncomeProjection incomeProjectionDataToDomainModel(TransactionProjectionsRow apr, IncomeRow ir){
+    return IncomeProjection(
+      projectionPk: apr.projection_pk, 
+      projectedAmount:  apr.projected_amount, 
+      incomePk: apr.income_pk!,
+      income: IncomeRepository.dataToDomainModel(ir),
     );
   }
 
@@ -301,10 +244,6 @@ class ProjectionsRepository implements Repository<Projection> {
   @override
   Future<Projection> createNew(Projection tmpItem) async {
     throw Exception("Not implemented. use createNewReturnVoid instead.");
-  }
-
-  @override Future<List<Projection>> getAll() async { 
-    throw Exception("Not implemented. use getAllReadModels instead.");
   }
 
   @override Future<Projection> saveChanges(Projection itemWithChanges) async{

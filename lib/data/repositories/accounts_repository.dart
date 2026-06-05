@@ -8,7 +8,7 @@ import 'package:finance_calendar/domain/models/account.dart';
 import 'package:finance_calendar/domain/use_cases/helpers.dart';
 import 'package:finance_calendar/domain/models/abstract_domain_model.dart';
 
-import 'dart:developer' as dev;
+// import 'dart:developer' as dev;
 
 class AccountsRepository implements Repository<Account>{
   late AccountsDAO dao;

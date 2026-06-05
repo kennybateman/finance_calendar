@@ -5,7 +5,7 @@ import '../../data/repositories/projections_repository.dart';
 import '../../data/repositories/settings_repository.dart';
 // DOMAIN
 //import 'package:finance_calendar/domain/use_cases/helpers.dart';
-import 'package:finance_calendar/domain/models/projection_read_only.dart';
+import 'package:finance_calendar/domain/models/projection.dart';
 import 'package:finance_calendar/domain/use_cases/generate_projections.dart';
 // UI
 import '../shared/crud_list_page.dart';
@@ -26,9 +26,9 @@ class ProjectionsPage extends StatelessWidget {
   Widget build(BuildContext context) {
 
     /* stupid fucking hack to prevent exception when trying to load readonly models in bad state */
-    Future<List<ProjectionReadModel>> tryGetAllReadModels() async {
+    Future<List<Projection>> tryGetAllReadModels() async {
       try {
-        return (await repo.getAllReadModels()).toList();
+        return (await repo.getAll()).toList();
       }
       catch(e){
         generateProjections.clearProjections();
@@ -36,21 +36,21 @@ class ProjectionsPage extends StatelessWidget {
       }
     }
 
-    Widget toTileWidget(ProjectionReadModel projection, double scale){
+    Widget toTileWidget(Projection projection, double scale){
       return Text(
         projection.toString(), 
         style: TextStyle(fontSize: 16 * scale)
       );
     }
 
-    return CrudListPage<ProjectionReadModel>(
+    return CrudListPage<Projection>(
       settingsRepo: settingsRepo,
       getAll: tryGetAllReadModels,
-      getMoreAfter: repo.getAllReadModelsAfter,
+      getMoreAfter: repo.getAllAfter,
       scrollToBottomHandler: generateProjections.generateMoreProjections,
       buildTileWidget: toTileWidget,
       useAddButton: false,
-      detailPage: (ProjectionReadModel p) => ProjectionDetailPage(
+      detailPage: (Projection p) => ProjectionDetailPage(
         projection: p,
         settingsRepo: settingsRepo,
       )

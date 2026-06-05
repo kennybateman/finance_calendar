@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 // DATA
 import '../../data/repositories/settings_repository.dart';
 // DOMAIN
-import '../../domain/models/projection_read_only.dart';
+import '../../domain/models/projection.dart';
 import '../../domain/models/settings.dart';
 
 class ProjectionDetailPage extends StatefulWidget {
-  final ProjectionReadModel projection;
+  final Projection projection;
   final SettingsRepository settingsRepo;
   const ProjectionDetailPage({
     super.key, 
@@ -57,8 +57,8 @@ class ProjectionDetailPageState extends State<ProjectionDetailPage> {
 
     List<Widget> all = [
       Text(widget.projection.dateString, style: TextStyle(fontSize: 16 * scale)),
-      for (var balanceString in widget.projection.accountProjectionStrings()) Text(balanceString, style: TextStyle(fontSize: 16 * scale)),
-      for (var transactionString in widget.projection.transactionProjectionStrings()) Text(transactionString, style: TextStyle(fontSize: 16 * scale)),
+      for (var balanceString in widget.projection.accountProjectionStrings) Text(balanceString, style: TextStyle(fontSize: 16 * scale)),
+      for (var transactionString in widget.projection.transactionProjectionStrings) Text(transactionString, style: TextStyle(fontSize: 16 * scale)),
     ];
 
     return Scaffold(

@@ -36,10 +36,23 @@ abstract class DAO<T extends DatabaseRow> {
     return results.map(fromMap).firstOrNull;
   }
 
+  Future<T?> getLast() async {
+    final db = dbWrapper.database;
+    final results = await db.query(tableName, orderBy: 'pk DESC', limit: 1);
+    return results.map(fromMap).firstOrNull;
+  }
+
   Future<List<T>> getMultiple(List<int> pks) async {
     final db = dbWrapper.database;
     final placeholders = List.filled(pks.length, '?').join(',');
     final results = await db.query(tableName,  where: 'pk in ($placeholders)', whereArgs: pks);
+    return results.map(fromMap).toList();   
+  }
+
+  Future<List<T>> getMultipleByInt(String fieldName, List<int> pks) async {
+    final db = dbWrapper.database;
+    final placeholders = List.filled(pks.length, '?').join(',');
+    final results = await db.query(tableName,  where: '$fieldName in ($placeholders)', whereArgs: pks);
     return results.map(fromMap).toList();   
   }
 

@@ -18,7 +18,7 @@ class BillsRepository extends Repository<Bill>{
     accountsDao = AccountsDAO(dbWrapper: db);
   }
 
-  Bill dataToDomainModel(BillsRow row){
+  static Bill dataToDomainModel(BillsRow row){
     return Bill(
       pk: row.pk,
       name: row.name,
@@ -29,6 +29,7 @@ class BillsRepository extends Repository<Bill>{
       payFromAccountPk: row.pay_from_account_pk,
     );
   }
+  
   BillsRow domainToDataModel(Bill entity){
     return BillsRow(
       pk: entity.pk,

@@ -33,25 +33,25 @@ class AccountProjectionsRow implements DatabaseRow {
   }
 }
 
-/* Implement your own unique supporting methods */
-Map<int, List<AccountProjectionsRow>> mapAccountProjectionsByProjectionPk(List<AccountProjectionsRow> accountProjectionRows){
-  Map<int, List<AccountProjectionsRow>> map = { };
-  for (AccountProjectionsRow row in accountProjectionRows){
-    if (map.containsKey(row.projection_pk)){
-      map[row.projection_pk]!.add(row);
-    }
-    else{
-      map[row.projection_pk] = [row];
-    }
-  }
-  return map;
-}
+// /* Implement your own unique supporting methods */
+// Map<int, List<AccountProjectionsRow>> mapAccountProjectionsByProjectionPk(List<AccountProjectionsRow> accountProjectionRows){
+//   Map<int, List<AccountProjectionsRow>> map = { };
+//   for (AccountProjectionsRow row in accountProjectionRows){
+//     if (map.containsKey(row.projection_pk)){
+//       map[row.projection_pk]!.add(row);
+//     }
+//     else{
+//       map[row.projection_pk] = [row];
+//     }
+//   }
+//   return map;
+// }
 
-/* Implement your own unique supporting methods */
-Map<int, AccountProjectionsRow> mapAccountProjectionsByAccountPk(List<AccountProjectionsRow> accountProjectionRows){
-  Map<int, AccountProjectionsRow> map = { };
-  for (AccountProjectionsRow row in accountProjectionRows){
-      map[row.projection_pk] = row;
-  }
-  return map;
-}
+// /* Implement your own unique supporting methods */
+// Map<int, AccountProjectionsRow> mapAccountProjectionsByAccountPk(List<AccountProjectionsRow> accountProjectionRows){
+//   Map<int, AccountProjectionsRow> map = { };
+//   for (AccountProjectionsRow row in accountProjectionRows){
+//       map[row.projection_pk] = row;
+//   }
+//   return map;
+// }

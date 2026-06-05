@@ -19,7 +19,7 @@ class IncomeRepository extends Repository<Income>{
     accountsDao = AccountsDAO(dbWrapper: db);
   }
 
-  Income dataToDomainModel(IncomeRow row){
+  static Income dataToDomainModel(IncomeRow row){
     return Income(
       pk: row.pk,
       name: row.name,

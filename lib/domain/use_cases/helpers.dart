@@ -31,7 +31,7 @@ String dateToStringForDB(DateTime? date){
 }
 
 DateTime? stringToDate(String? datestring){
-  if (datestring == null) return null;
+  if (datestring == null || datestring == "") return null;
   try {
     return DateFormat('yyyy-MM-d').parse(datestring);
   }
@@ -51,22 +51,6 @@ DateTime startOfMonth(DateTime day){
 
 DateTime startOfNextMonth(DateTime day){
   return DateTime(day.year, day.month+1, 1);
-}
-
-DateTime sameDayLastMonth(DateTime day, int? anchorDay){
-  final daysInPriorMonth = DateTime(day.year, day.month, 0).day;
-  /* ex: May 31 to April 31 (needs to be April 30) */
-  final attemptedDayOfMonth = anchorDay ?? day.day;
-  final resolvedDayOfMonth = attemptedDayOfMonth > daysInPriorMonth ? daysInPriorMonth : attemptedDayOfMonth;
-  return DateTime(day.year, day.month - 1, resolvedDayOfMonth);
-}
-
-DateTime sameDayNextMonth(DateTime day, int? anchorDay){
-  final daysInNextMonth = DateTime(day.year, day.month + 2, 0).day;
-  /* ex: March 31 to April 31 (neds to be April 30) */
-  final attemptedDayOfMonth = anchorDay ?? day.day;
-  final resolvedDayOfMonth = attemptedDayOfMonth > daysInNextMonth ? daysInNextMonth : attemptedDayOfMonth;
-  return DateTime(day.year, day.month + 1, resolvedDayOfMonth);
 }
 
 DateTime toDate(DateTime datetime){

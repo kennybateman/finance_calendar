@@ -8,6 +8,7 @@ import 'package:finance_calendar/data/repositories/accounts_repository.dart';
 // DOMAIN
 import 'package:finance_calendar/domain/models/account.dart';
 import 'package:finance_calendar/domain/use_cases/helpers.dart';
+import 'package:finance_calendar/domain/use_cases/due_date.dart';
 
 void main() {
 
@@ -51,9 +52,9 @@ void main() {
     expect(all.length,  1);
     expect(all.first.balanceDate, toDate(DateTime.now()));
 
-    account = account.updateValue(balanceDate: sameDayLastMonth(toDate(DateTime.now()), toDate(DateTime.now()).day));
+    account = account.updateValue(balanceDate: DueDate.sameDayLastMonth(toDate(DateTime.now()), toDate(DateTime.now()).day));
     account = await repo.saveChanges(account);
-    expect(account.balanceDate, sameDayLastMonth(toDate(DateTime.now()), toDate(DateTime.now()).day));
+    expect(account.balanceDate, DueDate.sameDayLastMonth(toDate(DateTime.now()), toDate(DateTime.now()).day));
 
     await repo.delete(account);
 

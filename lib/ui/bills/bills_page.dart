@@ -7,10 +7,12 @@ import '../../data/repositories/settings_repository.dart';
 // DOMAIN
 import '../../domain/models/bill.dart';
 import 'package:finance_calendar/domain/use_cases/generate_projections.dart';
+import '../../domain/use_cases/due_date.dart';
 // UI
 import '../shared/crud_list_page.dart';
 import 'edit_bill_page.dart';
 import 'package:finance_calendar/domain/use_cases/helpers.dart';
+import 'dart:developer' as dev;
 
 class BillsPage extends StatelessWidget {
   final BillsRepository repo;
@@ -30,9 +32,26 @@ class BillsPage extends StatelessWidget {
     Widget toString(Bill bill, double scale){
       var amountString = "\$${currencyCentsToDollarsString(bill.amount)}";
       var payFromString = bill.payFromAccount != null ? "pay from: ${bill.payFromAccount!.name}" : "(missing pay from account)";
-      var dueString = bill.dueDate != null ? "next due ${dateToStringForDisplay(bill.dueDate)}" : "(missing due date)";
+
+      final String dueDateString;
+      if (bill.dueDate != null){
+        dev.log("HELLO");
+        final nextDueDate = DueDate.findNextDueDateAfterOrOn(
+          toDate(DateTime.now()), 
+          bill.dueDate!, 
+          bill.dueFrequency, 
+          bill.dueDateAnchorDay!
+        );
+        dev.log("OH BOY");
+        dueDateString = "due ${dateToStringForDisplay(nextDueDate)}";
+      }
+      else{
+        dev.log("oh boy okay");
+        dueDateString = "(missing due date)";
+      }
+
       return Text(
-        "${bill.name}: $amountString ${bill.dueFrequency} - $dueString - $payFromString",
+        "${bill.name}: $amountString ${bill.dueFrequency} - $dueDateString - $payFromString",
         style: TextStyle(fontSize: 16 * scale)
       );
     }

@@ -28,8 +28,6 @@ import 'package:finance_calendar/domain/models/bill_projection.dart';
 import 'package:finance_calendar/domain/models/income_projection.dart';
 import 'package:finance_calendar/domain/use_cases/helpers.dart';
 
-//import 'dart:developer' as developer;
-
 class ProjectionsRepository implements Repository<Projection> {
   late ProjectionsDAO projectionsDao;
   late AccountProjectionsDAO accountProjectionsDao;
@@ -154,6 +152,7 @@ class ProjectionsRepository implements Repository<Projection> {
     var accountPks = accountProjectionsRows.map((apr) => apr.account_pk).toList();
     var accountsRows = await accountsDao.getMultiple(accountPks);
 
+    /* don't forget to check for interest payment bills where account_pk is linked instead of bill_pk */
     var billPks = transactionProjectionsRows.where((tpr) => tpr.bill_pk != null).map((tpr) => tpr.bill_pk!).toList();
     var billsRows = await billsDao.getMultiple(billPks);
 
@@ -171,10 +170,10 @@ class ProjectionsRepository implements Repository<Projection> {
 
     var joinedBillProjections = transactionProjectionsRows
       .where((tpr) => tpr.bill_pk != null || tpr.account_pk != null)
-      .map((bp) => billProjectionDataToDomainModel(bp, billsByPK[bp.bill_pk]!, accountsByPk[bp.account_pk]!));
+      .map((bp) => billProjectionDataToDomainModel(bp, billsByPK[bp.bill_pk], accountsByPk[bp.account_pk]));
 
     var joinedIncomeProjections = transactionProjectionsRows
-      .where((tpr) => tpr.bill_pk != null || tpr.account_pk != null)
+      .where((tpr) => tpr.income_pk != null)
       .map((ip) => incomeProjectionDataToDomainModel(ip, incomeByPk[ip.income_pk]!));
 
 
@@ -187,7 +186,7 @@ class ProjectionsRepository implements Repository<Projection> {
       fullyJoinedModels.add(
         dataToReadOnlyModel(
           projectionsRow,
-          accountProjectionsByProjectionPk[projectionsRow.pk]!,
+          accountProjectionsByProjectionPk[projectionsRow.pk] ?? [],
           billProjectionsByProjectionPk[projectionsRow.pk] ?? [],
           incomeProjectionsByProjectionPk[projectionsRow.pk] ?? [],
         )

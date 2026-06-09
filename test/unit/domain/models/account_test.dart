@@ -27,7 +27,6 @@ void main() {
       payFromAccountPk: null,
     );
 
-    
     test('Projection model instantiates', () async {
       expect(account, account2);
     });

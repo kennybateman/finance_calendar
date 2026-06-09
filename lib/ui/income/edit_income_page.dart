@@ -165,7 +165,7 @@ class EditIncomePageState extends State<EditIncomePage> {
   Widget build(BuildContext context) {
     return CrudEditPage<Income>(
       title: "${widget.income.pk == null ? "Create" : "Edit"}  Income",
-      keyFieldChangedHandler: widget.generateProjections.generateProjections,
+      keyFieldChangedHandler: widget.generateProjections.generateInitialProjections,
       keyFieldChangedFailureHandler: widget.generateProjections.clearProjections,
       item: widget.income,
       createItem: widget.createNew,

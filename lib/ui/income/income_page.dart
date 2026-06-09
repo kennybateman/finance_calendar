@@ -8,6 +8,7 @@ import '../../data/repositories/settings_repository.dart';
 import 'package:finance_calendar/domain/use_cases/helpers.dart';
 import 'package:finance_calendar/domain/use_cases/generate_projections.dart';
 import '../../domain/models/income.dart';
+import '../../domain/use_cases/due_date.dart';
 // UI
 import '../shared/crud_list_page.dart';
 import 'edit_income_page.dart';
@@ -30,9 +31,23 @@ class IncomePage extends StatelessWidget {
     Widget buildTileWidget(Income income, double scale){
       var amountString = "\$${currencyCentsToDollarsString(income.amount)}";
       var payToString = income.payToAccount != null ? "pay to: ${income.payToAccount!.name}" : "(missing pay to account)";
-      var dueString = income.dueDate != null ? "next due ${dateToStringForDisplay(income.dueDate)}" : "(missing due date)";
+
+      final String dueDateString;
+      if (income.dueDate != null){
+        final nextDueDate = DueDate.findNextDueDateAfterOrOn(
+          toDate(DateTime.now()), 
+          income.dueDate!, 
+          income.dueFrequency, 
+          income.dueDateAnchorDay!
+        );
+        dueDateString = "due ${dateToStringForDisplay(nextDueDate)}";
+      }
+      else{
+        dueDateString = "(missing due date)";
+      }
+
       return Text(
-        "${income.name}: $amountString ${income.dueFrequency} - $dueString - $payToString",
+        "${income.name}: $amountString ${income.dueFrequency} - $dueDateString - $payToString",
         style: TextStyle(fontSize: 16 * scale)
       );
     }

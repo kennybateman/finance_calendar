@@ -17,10 +17,6 @@ void main() {
       datestring = "9/1/2001";
       expect(RegExp(r'^\d{1,2}/\d{1,2}/\d{2,4}$').hasMatch(datestring), true);
       expect(DateFormat('MM/dd/yyyy').parse(datestring), expectedDate);
-
-  // expect(RegExp(r'^\d{1,2}/\d{1,2}/\d{2}$').hasMatch(datestring)){
-  //   return DateFormat('MM/dd/yy').parse(datestring);
-
     });
   });
 }

@@ -1,6 +1,7 @@
 import 'abstract_domain_model.dart';
 import 'account.dart';
 import 'bill.dart';
+import '../use_cases/helpers.dart';
 
 class BillProjection extends DomainModel<BillProjection> {
   @override
@@ -53,9 +54,9 @@ class BillProjection extends DomainModel<BillProjection> {
   @override
   String toString(){
     if (creditAccount != null){
-      return "${creditAccount!.name} interest: \$$projectedAmount";
+      return "${creditAccount!.name} interest: \$${currencyCentsToDollarsString(projectedAmount)}";
     }
-    return "${bill!.name}: \$$projectedAmount";
+    return "${bill!.name}: \$${currencyCentsToDollarsString(projectedAmount)}";
   }
 
   BillProjection updateValues({

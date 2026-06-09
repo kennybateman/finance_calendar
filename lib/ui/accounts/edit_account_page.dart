@@ -231,7 +231,7 @@ class EditAccountPageState extends State<EditAccountPage> {
   Widget build(BuildContext context) {
     return CrudEditPage<Account>(
       title: "${widget.account.pk == null ? "Create" : "Edit"} Account",
-      keyFieldChangedHandler: widget.generateProjections.generateProjections,
+      keyFieldChangedHandler: widget.generateProjections.generateInitialProjections,
       keyFieldChangedFailureHandler: widget.generateProjections.clearProjections,
       item: widget.account,
       createItem: widget.createNew,

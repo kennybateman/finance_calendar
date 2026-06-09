@@ -61,7 +61,7 @@ class Projection extends DomainModel<Projection> {
   List<int> get transactionAmounts => incomeProjections.map((ip) => ip.projectedAmount).toList() + billProjections.map((bp) => bp.projectedAmount).toList();
 
   /* get display strings for accounts or transactions */
-  List<String> get accountProjectionStrings => accountProjections.map((ap) => "${ap.account.name}: \$${ap.projectedBalance}").toList();
+  List<String> get accountProjectionStrings => accountProjections.map((ap) => "${ap.account.name}: \$${currencyCentsToDollarsString(ap.projectedBalance)}").toList();
   List<String> get transactionProjectionStrings => 
     incomeProjections.map((ip) => ip.toString()).toList() +
     billProjections.map((bp) => bp.toString()).toList();

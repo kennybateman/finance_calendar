@@ -73,7 +73,7 @@ class CrudListPageState<T extends DomainModel<T>> extends State<CrudListPage<T>>
     if (widget.scrollToBottomHandler != null){
       final current = scrollController.position.pixels;
       final bottom = scrollController.position.maxScrollExtent;
-      if (current >= bottom - 200 && !loading){
+      if (current >= bottom - 200 && !loadingMore){
         await bottomHandlerAndLoadMore();
       }
     }

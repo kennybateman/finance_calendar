@@ -1,6 +1,7 @@
 import 'abstract_domain_model.dart';
 import 'income.dart';
 import 'projection.dart';
+import '../use_cases/helpers.dart';
 
 class IncomeProjection extends DomainModel<IncomeProjection>{
   @override
@@ -48,7 +49,7 @@ class IncomeProjection extends DomainModel<IncomeProjection>{
 
   @override
   String toString(){
-    return "${income!.name}: \$$projectedAmount";
+    return "${income!.name}: \$${currencyCentsToDollarsString(projectedAmount)}";
   }
 
   IncomeProjection updateValues({

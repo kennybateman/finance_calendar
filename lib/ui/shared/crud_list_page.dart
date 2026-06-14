@@ -58,7 +58,9 @@ class CrudListPageState<T extends DomainModel<T>> extends State<CrudListPage<T>>
   @override
   void initState(){
     super.initState();
-    scrollController.addListener(onScroll);
+    if (widget.scrollToBottomHandler != null){
+      scrollController.addListener(onScroll);
+    }
     loadItems(); // async call
   }
 
@@ -70,12 +72,10 @@ class CrudListPageState<T extends DomainModel<T>> extends State<CrudListPage<T>>
 
   void onScroll() async {
     /* only on scroll event rn is a bottom handler */
-    if (widget.scrollToBottomHandler != null){
-      final current = scrollController.position.pixels;
-      final bottom = scrollController.position.maxScrollExtent;
-      if (current >= bottom - 200 && !loadingMore){
-        await bottomHandlerAndLoadMore();
-      }
+    final current = scrollController.position.pixels;
+    final bottom = scrollController.position.maxScrollExtent;
+    if (current >= bottom - 200 && !loadingMore){
+      await bottomHandlerAndLoadMore();
     }
   }
 
@@ -191,7 +191,7 @@ class CrudListPageState<T extends DomainModel<T>> extends State<CrudListPage<T>>
         itemCount: items.length + (getMoreEnabled ? 1 : 0),
         itemBuilder: (context, index) {
           /* if last item, then show circular progress thingy */
-          if (index == items.length && getMoreEnabled) {
+          if (index == items.length && items.isNotEmpty && getMoreEnabled) {
             return const Padding(
               padding: EdgeInsets.all(16),
               child: Center(
@@ -200,6 +200,9 @@ class CrudListPageState<T extends DomainModel<T>> extends State<CrudListPage<T>>
             );
           }
           /* otherwise make item */
+          if (items.isEmpty){
+            return null;
+          }
           final item = items[index];
           return ListTile(
             title: widget.buildTileWidget(item, scale), 

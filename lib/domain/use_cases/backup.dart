@@ -213,15 +213,13 @@ class Backup {
     }
   }
 
-
-
   int unpackInt(Data data){
     if (data.value is int) return data.value as int;
     return int.tryParse(data.value.toString())!;
   }
 
   int? unpackNullableInt(Data data){
-    final val = data.toString();
+    final val = data.value.toString();
      return val == "" || val == "null" ? null : int.tryParse(val);
   }
 

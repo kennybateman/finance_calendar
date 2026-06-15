@@ -9,6 +9,8 @@ import '../data/repositories/accounts_repository.dart';
 import '../data/repositories/income_repository.dart';
 import '../data/repositories/bills_repository.dart';
 import '../data/repositories/settings_repository.dart';
+// DOMAIN
+import 'package:finance_calendar/domain/use_cases/generate_projections.dart';
 // UI
 import 'finance_calendar_view_model.dart';
 import 'projections/projections_page.dart';
@@ -22,6 +24,7 @@ import 'information/information_page.dart';
 //import 'dart:developer' as dev;
 
 class FinanceCalendar extends StatefulWidget {
+  /* These are OS dependent methods that must be figured out at the main() level */
   final DatabaseWrapper databaseWrapper;
   final SettingsWrapper settingsWrapper;
   final Future<void> Function(Excel, String) saveHandler;
@@ -119,6 +122,8 @@ class FinanceCalendarState extends State<FinanceCalendar>{
             unpackDataFromExcel: viewModel.backup.unpackDataFromExcel,
             exportProjectionToExcel: viewModel.exportProjections.backupDataToExcel,
             checkIfExcelCanExport: viewModel.generateProjections.loadAndValidateAllRecords,
+            clearProjections: viewModel.generateProjections.clearProjections,
+            generateProjections: viewModel.generateProjections.generateInitialProjections,
             informationPage: InformationPage(),
           ),
         ]),

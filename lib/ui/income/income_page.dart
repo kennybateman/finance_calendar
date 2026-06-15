@@ -33,7 +33,7 @@ class IncomePage extends StatelessWidget {
       var payToString = income.payToAccount != null ? "pay to: ${income.payToAccount!.name}" : "(missing pay to account)";
 
       final String dueDateString;
-      if (income.dueDate != null){
+      if (income.dueDate != null && income.dueDateAnchorDay != null){
         final nextDueDate = DueDate.findNextDueDateAfterOrOn(
           toDate(DateTime.now()), 
           income.dueDate!, 

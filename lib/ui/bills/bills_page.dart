@@ -34,19 +34,18 @@ class BillsPage extends StatelessWidget {
       var payFromString = bill.payFromAccount != null ? "pay from: ${bill.payFromAccount!.name}" : "(missing pay from account)";
 
       final String dueDateString;
-      if (bill.dueDate != null){
-        dev.log("HELLO");
+      if (bill.dueDate != null && bill.dueDateAnchorDay != null){
+
+
         final nextDueDate = DueDate.findNextDueDateAfterOrOn(
           toDate(DateTime.now()), 
           bill.dueDate!, 
           bill.dueFrequency, 
           bill.dueDateAnchorDay!
         );
-        dev.log("OH BOY");
         dueDateString = "due ${dateToStringForDisplay(nextDueDate)}";
       }
       else{
-        dev.log("oh boy okay");
         dueDateString = "(missing due date)";
       }
 

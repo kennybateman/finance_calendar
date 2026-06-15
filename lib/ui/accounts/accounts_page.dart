@@ -39,7 +39,7 @@ class AccountsPage extends StatelessWidget {
         final amountString = account.dueDate != null ? "\$${currencyCentsToDollarsString(calculateCompoundInterest(account.balance, account.dueDate!))}" : "";
         
         final String dueDateString;
-        if (account.dueDate != null){
+        if (account.dueDate != null && account.dueDateAnchorDay != null){
           final nextDueDate = DueDate.findNextDueDateAfterOrOn(
             toDate(DateTime.now()), 
             account.dueDate!, 

@@ -1,9 +1,12 @@
 // Dart and Flutter
 import 'package:finance_calendar/data/repositories/settings_repository.dart';
+import 'package:finance_calendar/domain/use_cases/generate_projections.dart';
 import 'package:flutter/material.dart';
 // DOMAIN
 import 'package:finance_calendar/domain/models/abstract_domain_model.dart';
 import 'package:finance_calendar/domain/models/settings.dart';
+
+import 'dart:developer' as dev;
 
 class CrudListPage<T extends DomainModel<T>> extends StatefulWidget {
   final Future<void> Function()? preloadHook;
@@ -109,17 +112,19 @@ class CrudListPageState<T extends DomainModel<T>> extends State<CrudListPage<T>>
       loading = true;
     });
 
-
     if (widget.preloadHook != null){
+
+      dev.log("about to run preload hook");
       try{ 
         await widget.preloadHook!(); 
       }
-      on Exception catch(exception){
+      catch(exception){
 
         if (widget.preloadHookFailHandler != null){
           widget.preloadHookFailHandler!();
         }
         
+        dev.log("hit some error about to report...");
         setState((){
           statusMessage = exception.toString();
         });
@@ -153,11 +158,13 @@ class CrudListPageState<T extends DomainModel<T>> extends State<CrudListPage<T>>
     final getMoreEnabled = widget.getMoreAfter != null;
 
     final appBar = AppBar(
-      title: Text(statusMessage, 
-      style: TextStyle(
-        color: error ? Colors.red : Colors.black, 
-        fontWeight: FontWeight.bold
-      )),
+      title: Text(
+        statusMessage, 
+        style: TextStyle(
+          color: error ? Colors.red : Colors.black, 
+          fontWeight: FontWeight.bold
+        )
+      ),
       actions: [
         IconButton(
           icon: Icon(Icons.remove),

@@ -11,6 +11,8 @@ import 'package:finance_calendar/domain/use_cases/generate_projections.dart';
 import '../shared/crud_list_page.dart';
 import 'projection_details_page.dart';
 
+import 'dart:developer' as dev;
+
 class ProjectionsPage extends StatelessWidget {
   final ProjectionsRepository repo;
   final GenerateProjectionsUseCase generateProjections;
@@ -25,14 +27,10 @@ class ProjectionsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
-    /* stupid fucking hack to prevent exception when trying to load readonly models in bad state */
-    Future<List<Projection>> tryGetAllReadModels() async {
-      try {
-        return (await repo.getAll()).toList();
-      }
-      catch(e){
-        generateProjections.clearProjections();
-        return [];
+    Future<void> preloadHook() async {
+      final projections = await repo.getAll();
+      if (projections.isEmpty){
+        await generateProjections.generateInitialProjections();
       }
     }
 
@@ -44,8 +42,10 @@ class ProjectionsPage extends StatelessWidget {
     }
 
     return CrudListPage<Projection>(
+      preloadHook: preloadHook,
+      preloadHookFailHandler: generateProjections.clearProjections,
       settingsRepo: settingsRepo,
-      getAll: tryGetAllReadModels,
+      getAll: repo.getAll,
       getMoreAfter: repo.getAllAfter,
       scrollToBottomHandler: generateProjections.generateMoreProjections,
       buildTileWidget: toTileWidget,

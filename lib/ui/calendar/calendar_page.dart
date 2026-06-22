@@ -23,23 +23,19 @@ class CalendarPage extends StatefulWidget {
 }
 
 class CalendarPageState extends State<CalendarPage> {
-  late DateTime selectedDay;
-  late Projection? projectionForDay;
-  late List<Projection> projectionsForMonth;
-  late Map<String,Projection> projectionsForMonthByDate;
+  bool loading = true;
+  DateTime selectedDay = DateTime.now();
+  Projection? projectionForDay;
+  List<Projection> projectionsForMonth = [];
+  Map<String,Projection> projectionsForMonthByDate = {};
 
   @override
   void initState(){
     super.initState();
-    selectedDay = DateTime.now();
-    /* values below are loaded asynchronously */
-    projectionForDay = null;
-    projectionsForMonth = [];
-    projectionsForMonthByDate = {};
-    loadItems(); // async
+    loadProjectionsForDay(); // async
   }
 
-  Future<void> loadItems() async {
+  Future<void> loadProjectionsForDay() async {
     final forMonth = await widget.projectionsRepo.getForDateRange(startOfMonth(selectedDay), startOfNextMonth(selectedDay));
     final byDate = mapReadOnlyProjectionsByDateString(forMonth);
     final forDay = byDate[dateToStringForDB(selectedDay)];
@@ -47,6 +43,7 @@ class CalendarPageState extends State<CalendarPage> {
       projectionForDay = forDay;
       projectionsForMonth = forMonth;
       projectionsForMonthByDate = byDate;
+      loading = false;
     });
   }
 
@@ -80,7 +77,7 @@ class CalendarPageState extends State<CalendarPage> {
     setState((){
       selectedDay = day;
     });
-    await loadItems(); // async
+    await loadProjectionsForDay(); // async
   }
 
   /* If day in calendar has events, mark it with a graphic */
@@ -90,6 +87,11 @@ class CalendarPageState extends State<CalendarPage> {
 
   @override
   Widget build(BuildContext context) {
+
+    final circleWaiting = const Center(child: CircularProgressIndicator());
+    final bodyForDay = ListView(children: [ ListTile(title: Text(projectionForDay?.toString() ?? "")) ]);
+    final indexedStack = IndexedStack(index: loading ? 0 : 1, children: [ circleWaiting, bodyForDay ]);
+
     return Column(
       children: [
         TableCalendar(
@@ -105,7 +107,7 @@ class CalendarPageState extends State<CalendarPage> {
           onPageChanged: onPageChanged,
         ),
         Expanded(
-          child: ListView(children: [ListTile(title: Text(projectionForDay?.toString() ?? "")) ]),
+          child: indexedStack,
         ),
       ],
     );

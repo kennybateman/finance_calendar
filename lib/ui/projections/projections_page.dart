@@ -11,7 +11,6 @@ import 'package:finance_calendar/domain/use_cases/generate_projections.dart';
 import '../shared/crud_list_page.dart';
 import 'projection_details_page.dart';
 
-import 'dart:developer' as dev;
 
 class ProjectionsPage extends StatelessWidget {
   final ProjectionsRepository repo;

@@ -10,7 +10,6 @@ import '../data/repositories/income_repository.dart';
 import '../data/repositories/bills_repository.dart';
 import '../data/repositories/settings_repository.dart';
 // DOMAIN
-import 'package:finance_calendar/domain/use_cases/generate_projections.dart';
 // UI
 import 'finance_calendar_view_model.dart';
 import 'projections/projections_page.dart';
@@ -135,6 +134,7 @@ class FinanceCalendarState extends State<FinanceCalendar>{
       theme: ThemeData.light(), 
       darkTheme: ThemeData.dark(),
       themeMode: widget.settingsWrapper.getDarkMode() ? ThemeMode.dark : ThemeMode.light,
+      debugShowMaterialGrid: false,
       home: Scaffold(
         appBar: AppBar(toolbarHeight: 0),
         body: viewModel.isLoading ? loadingCircle : homeBody,

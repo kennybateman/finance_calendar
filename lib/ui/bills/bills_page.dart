@@ -12,7 +12,6 @@ import '../../domain/use_cases/due_date.dart';
 import '../shared/crud_list_page.dart';
 import 'edit_bill_page.dart';
 import 'package:finance_calendar/domain/use_cases/helpers.dart';
-import 'dart:developer' as dev;
 
 class BillsPage extends StatelessWidget {
   final BillsRepository repo;

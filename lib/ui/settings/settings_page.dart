@@ -9,7 +9,6 @@ import '../../domain/use_cases/generate_projections.dart';
 import '../shared/switch_form_input.dart';
 import '../information/information_page.dart';
 // DEBUG
-import 'dart:developer' as dev;
 
 class SettingsPage extends StatefulWidget {
   final Settings Function() getSettings;

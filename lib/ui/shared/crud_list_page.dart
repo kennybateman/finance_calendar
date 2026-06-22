@@ -1,6 +1,5 @@
 // Dart and Flutter
 import 'package:finance_calendar/data/repositories/settings_repository.dart';
-import 'package:finance_calendar/domain/use_cases/generate_projections.dart';
 import 'package:flutter/material.dart';
 // DOMAIN
 import 'package:finance_calendar/domain/models/abstract_domain_model.dart';

@@ -52,6 +52,7 @@ void main() async {
 
     runApp(
       MaterialApp(
+        debugShowMaterialGrid: false,
         home: ErrorScreenPage(
           message: e.toString()
         )
